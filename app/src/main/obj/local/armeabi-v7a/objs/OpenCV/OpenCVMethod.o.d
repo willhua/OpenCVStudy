@@ -1,21 +1,21 @@
-D:/Files/GithubRepo/OpenCVStudy/app/src/main/obj/local/armeabi-v7a/objs/OpenCV/OpenCVMethod.o: \
-  D:/Files/GithubRepo/OpenCVStudy/app/src/main/jni/OpenCVMethod.cpp \
-  D:/Files/GithubRepo/OpenCVStudy/app/src/main/jni/OpenCVMethod.h \
+D:/Study/GitHubRepo/OpenCVStudy/app/src/main/obj/local/armeabi-v7a/objs/OpenCV/OpenCVMethod.o: \
+  D:/Study/GitHubRepo/OpenCVStudy/app/src/main/jni/OpenCVMethod.cpp \
+  D:/Study/GitHubRepo/OpenCVStudy/app/src/main/jni/OpenCVMethod.h \
   ../../../../native/jni/include\opencv2\opencv.hpp \
   ../../../../native/jni/include\opencv2/core.hpp \
   ../../../../native/jni/include\opencv2/core/cvdef.h \
   ../../../../native/jni/include\opencv2/core/hal/interface.h \
-  D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cstddef \
+  D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cstddef \
   ../../../../native/jni/include\opencv2/core/version.hpp \
   ../../../../native/jni/include\opencv2/core/base.hpp \
-  D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\climits \
-  D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\algorithm \
+  D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\climits \
+  D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\algorithm \
   ../../../../native/jni/include\opencv2/core/cvstd.hpp \
-  D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cstring \
-  D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cctype \
-  D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\string \
-  D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cstdlib \
-  D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cmath \
+  D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cstring \
+  D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cctype \
+  D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\string \
+  D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cstdlib \
+  D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cmath \
   ../../../../native/jni/include\opencv2/core/ptr.inl.hpp \
   ../../../../native/jni/include\opencv2/core/neon_utils.hpp \
   ../../../../native/jni/include\opencv2/core/traits.hpp \
@@ -23,16 +23,16 @@ D:/Files/GithubRepo/OpenCVStudy/app/src/main/obj/local/armeabi-v7a/objs/OpenCV/O
   ../../../../native/jni/include\opencv2/core/saturate.hpp \
   ../../../../native/jni/include\opencv2/core/fast_math.hpp \
   ../../../../native/jni/include\opencv2/core/types.hpp \
-  D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cfloat \
-  D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\vector \
+  D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cfloat \
+  D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\vector \
   ../../../../native/jni/include\opencv2/core/mat.hpp \
   ../../../../native/jni/include\opencv2/core/bufferpool.hpp \
   ../../../../native/jni/include\opencv2/core/mat.inl.hpp \
   ../../../../native/jni/include\opencv2/core/persistence.hpp \
   ../../../../native/jni/include\opencv2/core/operations.hpp \
-  D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cstdio \
+  D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cstdio \
   ../../../../native/jni/include\opencv2/core/cvstd.inl.hpp \
-  D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\complex \
+  D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\complex \
   ../../../../native/jni/include\opencv2/core/utility.hpp \
   ../../../../native/jni/include\opencv2/core/core_c.h \
   ../../../../native/jni/include\opencv2/core/types_c.h \
@@ -53,7 +53,7 @@ D:/Files/GithubRepo/OpenCVStudy/app/src/main/obj/local/armeabi-v7a/objs/OpenCV/O
   ../../../../native/jni/include\opencv2/objdetect.hpp \
   ../../../../native/jni/include\opencv2/objdetect/detection_based_tracker.hpp \
   ../../../../native/jni/include\opencv2/objdetect/objdetect_c.h \
-  D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\deque \
+  D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\deque \
   ../../../../native/jni/include\opencv2/calib3d.hpp \
   ../../../../native/jni/include\opencv2/core/affine.hpp \
   ../../../../native/jni/include\opencv2/calib3d/calib3d_c.h \
@@ -64,10 +64,10 @@ D:/Files/GithubRepo/OpenCVStudy/app/src/main/obj/local/armeabi-v7a/objs/OpenCV/O
   ../../../../native/jni/include\opencv2/imgcodecs/imgcodecs_c.h \
   ../../../../native/jni/include\opencv2/videoio/videoio_c.h \
   ../../../../native/jni/include\opencv2/ml.hpp \
-  D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\map \
-  D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\iostream
+  D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\map \
+  D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\iostream
 
-D:/Files/GithubRepo/OpenCVStudy/app/src/main/jni/OpenCVMethod.h:
+D:/Study/GitHubRepo/OpenCVStudy/app/src/main/jni/OpenCVMethod.h:
 
 ../../../../native/jni/include\opencv2\opencv.hpp:
 
@@ -77,27 +77,27 @@ D:/Files/GithubRepo/OpenCVStudy/app/src/main/jni/OpenCVMethod.h:
 
 ../../../../native/jni/include\opencv2/core/hal/interface.h:
 
-D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cstddef:
+D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cstddef:
 
 ../../../../native/jni/include\opencv2/core/version.hpp:
 
 ../../../../native/jni/include\opencv2/core/base.hpp:
 
-D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\climits:
+D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\climits:
 
-D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\algorithm:
+D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\algorithm:
 
 ../../../../native/jni/include\opencv2/core/cvstd.hpp:
 
-D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cstring:
+D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cstring:
 
-D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cctype:
+D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cctype:
 
-D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\string:
+D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\string:
 
-D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cstdlib:
+D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cstdlib:
 
-D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cmath:
+D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cmath:
 
 ../../../../native/jni/include\opencv2/core/ptr.inl.hpp:
 
@@ -113,9 +113,9 @@ D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/inc
 
 ../../../../native/jni/include\opencv2/core/types.hpp:
 
-D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cfloat:
+D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cfloat:
 
-D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\vector:
+D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\vector:
 
 ../../../../native/jni/include\opencv2/core/mat.hpp:
 
@@ -127,11 +127,11 @@ D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/inc
 
 ../../../../native/jni/include\opencv2/core/operations.hpp:
 
-D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cstdio:
+D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\cstdio:
 
 ../../../../native/jni/include\opencv2/core/cvstd.inl.hpp:
 
-D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\complex:
+D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\complex:
 
 ../../../../native/jni/include\opencv2/core/utility.hpp:
 
@@ -173,7 +173,7 @@ D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/inc
 
 ../../../../native/jni/include\opencv2/objdetect/objdetect_c.h:
 
-D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\deque:
+D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\deque:
 
 ../../../../native/jni/include\opencv2/calib3d.hpp:
 
@@ -195,6 +195,6 @@ D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/inc
 
 ../../../../native/jni/include\opencv2/ml.hpp:
 
-D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\map:
+D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\map:
 
-D:/Android/AndroidSDK/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\iostream:
+D:/ProgramFiles/WorkTools/Sdk/ndk-bundle/build//../sources/cxx-stl/gnu-libstdc++/4.9/include\iostream:

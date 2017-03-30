@@ -16,8 +16,8 @@ endif
 
 LOCAL_MODULE := OpenCV
 
-LOCAL_SRC_FILES := OpenCVMethod.cpp
+LOCAL_SRC_FILES := OpenCVMethod.cpp  JniTest.cpp  LyhDehazor.cpp Dehazor.cpp
 
-LOCAL_LDLIBS +=  -lm -llog
+LOCAL_LDLIBS +=  -lm -llog -ljnigraphics
 
 include $(BUILD_SHARED_LIBRARY)

@@ -26,7 +26,7 @@ public class MainActivity extends Activity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.pic);
+           /*     Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.pic);
                 long time = System.currentTimeMillis();
                 mBeforeImage.setImageBitmap(bitmap);
                 int w = bitmap.getWidth(), h = bitmap.getHeight();
@@ -39,8 +39,19 @@ public class MainActivity extends Activity {
                 result.setPixels(resultPixes, 0, w, 0, 0,w, h);
                 Log.d(TAG, "opencvtime:" + time2 + " " + (System.currentTimeMillis() - time ) + "BITMAP:" + result.getWidth() + "*" + result.getHeight());
                 mAfterImage.setImageBitmap(result);
+
+                floatTest(); */
               //  img.setImageBitmap(result);
+
+                Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.haze);
+                Bitmap bitmap1 = BitmapFactory.decodeResource(getResources(), R.drawable.haze);
+                mBeforeImage.setImageBitmap(bitmap1);
+                Log.d(TAG, "dehazor");
+                OpenCVMethod.dehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
+                mAfterImage.setImageBitmap(bitmap);
             }
         }).run();
     }
+
+    native void floatTest();
 }
