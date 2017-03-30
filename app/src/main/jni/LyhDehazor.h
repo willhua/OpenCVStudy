@@ -20,6 +20,8 @@ class LyhDehazor
 private:
     const static int RADIUS = 7;
     int * mDivN;
+    int mRadius;
+    void Normalized(UCHAR *data, float *out, int len);
     void AirlightEsimation(UCHAR *oriImage, UCHAR *oriDark, UCHAR *out, int len, int low, int heigh);
     void ImageDivAir(UCHAR *oriImage, int len, float *out, UCHAR *air);
     void MeanFilter(UCHAR *data, UCHAR *outdata, int r, int widht, int height);

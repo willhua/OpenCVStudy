@@ -15,6 +15,7 @@ JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_OpenCVMethod_dehazor(JNIEnv 
 
     lyhDehazor->Dehazor((UCHAR *)data, width, height);
     LOG("dehazor  end");
+
     AndroidBitmap_unlockPixels(env, bitmap);
 }
 
