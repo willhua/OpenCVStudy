@@ -1,11 +1,16 @@
 package com.willhua.opencvstudy;
 
 import android.app.Activity;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
+
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -41,14 +46,20 @@ public class MainActivity extends Activity {
                 mAfterImage.setImageBitmap(result);
 
                 floatTest(); */
-              //  img.setImageBitmap(result);
+                //  img.setImageBitmap(result);
 
-                Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.haze);
-                Bitmap bitmap1 = BitmapFactory.decodeResource(getResources(), R.drawable.haze);
-                mBeforeImage.setImageBitmap(bitmap1);
-                Log.d(TAG, "dehazor");
-                OpenCVMethod.dehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
-                mAfterImage.setImageBitmap(bitmap);
+                AssetManager am = getAssets();
+                try {
+                    InputStream fis = am.open("haze.jpg");
+                    Bitmap bitmap = BitmapFactory.decodeStream(fis);
+                    Bitmap bitmap1 = BitmapFactory.decodeStream(fis);
+                    mBeforeImage.setImageBitmap(bitmap1);
+                    OpenCVMethod.dehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
+                    Log.d(TAG, "dehazor  " + bitmap.getWidth() + " *" + bitmap.getHeight());
+                    mAfterImage.setImageBitmap(bitmap);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }).run();
     }
