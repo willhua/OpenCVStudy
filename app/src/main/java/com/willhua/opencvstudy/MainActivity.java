@@ -50,7 +50,7 @@ public class MainActivity extends Activity {
 
                 AssetManager am = getAssets();
                 try {
-                    InputStream fis = am.open("haze.jpg");
+                    InputStream fis = am.open("1920-1080.jpeg");
                     Bitmap bitmap = BitmapFactory.decodeStream(fis);
                     Bitmap bitmap1 = BitmapFactory.decodeStream(fis);
                     mBeforeImage.setImageBitmap(bitmap1);
