@@ -50,13 +50,18 @@ public class MainActivity extends Activity {
 
                 AssetManager am = getAssets();
                 try {
-                    InputStream fis = am.open("1920-1080.jpeg");
+                    String file = "1000-667" + ".jpg";
+                    InputStream fis = am.open(file);
                     Bitmap bitmap = BitmapFactory.decodeStream(fis);
+                    fis.close();
+                    fis = am.open(file);
                     Bitmap bitmap1 = BitmapFactory.decodeStream(fis);
                     mBeforeImage.setImageBitmap(bitmap1);
-                    OpenCVMethod.dehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
+                 //   OpenCVMethod.dehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
+                    OpenCVMethod.fastDehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
                     Log.d(TAG, "dehazor  " + bitmap.getWidth() + " *" + bitmap.getHeight());
                     mAfterImage.setImageBitmap(bitmap);
+                    fis.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

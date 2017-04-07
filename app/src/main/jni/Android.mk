@@ -15,8 +15,9 @@ include $(OPENCV_MK_PATH)
 endif
 
 LOCAL_MODULE := OpenCV
+#LOCAL_ARM_NEON := true
 
-LOCAL_SRC_FILES := OpenCVMethod.cpp  JniTest.cpp  LyhDehazor.cpp Dehazor.cpp
+LOCAL_SRC_FILES := OpenCVMethod.cpp  JniTest.cpp  LyhDehazor.cpp Dehazor.cpp FastDehazor.cpp
 
 LOCAL_LDLIBS +=  -lm -llog -ljnigraphics
 
