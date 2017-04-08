@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <android/log.h>
 #include <time.h>
+#include <sys/system_properties.h>
 #ifndef JNI_TEST_H
 #define JNI_TEST_H
 
@@ -24,6 +25,29 @@ void printfTime()
 JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_MainActivity_floatTest(
         JNIEnv *env, jclass obj)
 {
+    char value[PROP_VALUE_MAX];
+    __system_property_get("ro.product.model", value);
+    LOG("model:%s" , value);
+
+    FILE *file = fopen("/data/data/com.willhua.opencvstudy/myfile.txt", "w+");
+    if(NULL == file)
+    {
+        LOG("fopen return null");
+    }else
+    {
+        LOG("fopen  not return null");
+    }
+    int fputs_size = fputs("fputs write\n", file);
+    int size_fw = fwrite("frwite", sizeof(char), 5, file);
+    char buffer[50];
+    fflush(file);
+fseek(file, -8, SEEK_CUR);
+//fclose(file);
+//file = fopen("/data/data/com.willhua.opencvstudy/myfile.txt", "r+t");
+    size_t size_fread = fread(buffer, sizeof(char), 6, file);
+    LOG("fputs size:%d   %d    %d", fputs_size, size_fw, size_fread);
+
+
 
 
     int len = 10000000;

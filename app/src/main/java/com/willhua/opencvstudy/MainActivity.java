@@ -5,8 +5,14 @@ import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.renderscript.Allocation;
+import android.renderscript.Element;
+import android.renderscript.RenderScript;
+import android.renderscript.Type;
 import android.util.Log;
 import android.widget.ImageView;
+
+import com.willhua.opencvstudy.rs.ScriptC_FastDehazor;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -28,6 +34,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+        floatTest();
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -50,6 +57,10 @@ public class MainActivity extends Activity {
 
                 AssetManager am = getAssets();
                 try {
+
+
+
+
                     String file = "1000-667" + ".jpg";
                     InputStream fis = am.open(file);
                     Bitmap bitmap = BitmapFactory.decodeStream(fis);
@@ -70,4 +81,36 @@ public class MainActivity extends Activity {
     }
 
     native void floatTest();
+    static {
+        System.loadLibrary("OpenCV");
+    }
+
+    void rsTest(){
+        AssetManager am = getAssets();
+        String file = "4288-2848" + ".jpg";
+        InputStream fis = null;
+        try {
+            fis = am.open(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Bitmap bitmap = BitmapFactory.decodeStream(fis);
+
+        //the test code for rs
+        Log.d(TAG, "rs init");
+        RenderScript renderScript = RenderScript.create(getApplication());
+        ScriptC_FastDehazor scriptC_fastDehazor = new ScriptC_FastDehazor(renderScript);
+        Allocation in = Allocation.createFromBitmap(renderScript, bitmap);
+        Allocation out = Allocation.createTyped(renderScript, new Type.Builder(renderScript, Element.U8(renderScript))
+                .setX(bitmap.getWidth()).setY(bitmap.getHeight()).setMipmaps(false).create());
+        Log.d(TAG, "rs start");
+        scriptC_fastDehazor.forEach_GetDarkChannel(in, out);
+        renderScript.finish();
+        Log.d(TAG, "rs end");
+
+
+        //the test for jni
+
+
+    }
 }
