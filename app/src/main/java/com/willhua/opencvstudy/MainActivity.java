@@ -21,6 +21,8 @@ import java.io.InputStream;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
+
+
 public class MainActivity extends Activity {
     private static final String TAG = "MainActivity";
 
@@ -28,6 +30,10 @@ public class MainActivity extends Activity {
     ImageView mBeforeImage;
     @BindView(R.id.after)
     ImageView mAfterImage;
+
+
+    String file = "1920-1080" + ".jpg";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,7 +67,6 @@ public class MainActivity extends Activity {
                     rsTest();
 
 
-                    String file = "1000-667" + ".jpg";
                     InputStream fis = am.open(file);
                     Bitmap bitmap = BitmapFactory.decodeStream(fis);
                     fis.close();
@@ -69,9 +74,10 @@ public class MainActivity extends Activity {
                     Bitmap bitmap1 = BitmapFactory.decodeStream(fis);
                     mBeforeImage.setImageBitmap(bitmap1);
                  //   OpenCVMethod.dehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
+                    Log.d(TAG, "dehazor start");
                     OpenCVMethod.fastDehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
-                    Log.d(TAG, "dehazor  " + bitmap.getWidth() + " *" + bitmap.getHeight());
-                    mAfterImage.setImageBitmap(bitmap);
+                    Log.d(TAG, "dehazor  end " + bitmap.getWidth() + " *" + bitmap.getHeight());
+                    //mAfterImage.setImageBitmap(bitmap);
                     fis.close();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -87,14 +93,15 @@ public class MainActivity extends Activity {
 
     void rsTest(){
         AssetManager am = getAssets();
-        String file = "1920-1080" + ".jpg";
         InputStream fis = null;
+        Bitmap bitmap = null;
         try {
             fis = am.open(file);
+            bitmap = BitmapFactory.decodeStream(fis);
+            fis.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        Bitmap bitmap = BitmapFactory.decodeStream(fis);
 
         //the test code for rs
         Log.d(TAG, "rs init");
@@ -102,15 +109,16 @@ public class MainActivity extends Activity {
         ScriptC_FastDehazor scriptC_fastDehazor = new ScriptC_FastDehazor(renderScript);
         Log.d(TAG, "rs init 2");
         Allocation in = Allocation.createFromBitmap(renderScript, bitmap, Allocation.MipmapControl.MIPMAP_NONE, Allocation.USAGE_SCRIPT);
-        Allocation out = Allocation.createTyped(renderScript, new Type.Builder(renderScript, Element.U8(renderScript))
-                .setX(bitmap.getWidth()).setY(bitmap.getHeight()).setMipmaps(false).create());
+        //Allocation out = Allocation.createTyped(renderScript, new Type.Builder(renderScript, Element.U8(renderScript))
+        //        .setX(bitmap.getWidth()).setY(bitmap.getHeight()).setMipmaps(false).create());
         Log.d(TAG, "rs start");
-        scriptC_fastDehazor.forEach_getDarkChannel(in, out);
+        //scriptC_fastDehazor.forEach_getDarkChannel(in, out);
+        scriptC_fastDehazor.invoke_fastProcess(in, bitmap.getWidth(), bitmap.getHeight());
         renderScript.finish();
         Log.d(TAG, "rs end");
         in.copyTo(bitmap);
         Log.d(TAG, "rs copy end");
-
+        mAfterImage.setImageBitmap(bitmap);
 
         //the test for jni
 

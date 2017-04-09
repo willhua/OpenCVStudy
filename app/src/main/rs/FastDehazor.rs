@@ -185,7 +185,9 @@ void fastProcess(rs_allocation inImage, int width, int height)
     gWidth = width;
     gHeight = height;
     int LEN = gWidth * gHeight;
+    rsDebug("main create gDrakChan", 1);
     gDarkChan = rsCreateAllocation_uchar(width, height);
+    rsDebug("main create gDrakChan end", 2);
     rsForEach(getDarkChannel, inImage, gDarkChan);   //获得暗通道darkChan
     rs_allocation rowSum = rsCreateAllocation_uint(height); //用来存储每一行的累加值
     rsForEach(getRowSum, rowSum, rowSum);  //获取暗通道的每一行的累加值到rowSum中
