@@ -105,7 +105,7 @@ public class MainActivity extends Activity {
         Allocation out = Allocation.createTyped(renderScript, new Type.Builder(renderScript, Element.U8(renderScript))
                 .setX(bitmap.getWidth()).setY(bitmap.getHeight()).setMipmaps(false).create());
         Log.d(TAG, "rs start");
-        scriptC_fastDehazor.forEach_GetDarkChannel(in, out);
+        scriptC_fastDehazor.forEach_getDarkChannel(in, out);
         renderScript.finish();
         Log.d(TAG, "rs end");
         in.copyTo(bitmap);
