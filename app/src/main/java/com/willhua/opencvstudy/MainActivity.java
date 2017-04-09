@@ -58,7 +58,7 @@ public class MainActivity extends Activity {
                 AssetManager am = getAssets();
                 try {
 
-
+                    rsTest();
 
 
                     String file = "1000-667" + ".jpg";
@@ -87,7 +87,7 @@ public class MainActivity extends Activity {
 
     void rsTest(){
         AssetManager am = getAssets();
-        String file = "4288-2848" + ".jpg";
+        String file = "1920-1080" + ".jpg";
         InputStream fis = null;
         try {
             fis = am.open(file);
@@ -100,13 +100,16 @@ public class MainActivity extends Activity {
         Log.d(TAG, "rs init");
         RenderScript renderScript = RenderScript.create(getApplication());
         ScriptC_FastDehazor scriptC_fastDehazor = new ScriptC_FastDehazor(renderScript);
-        Allocation in = Allocation.createFromBitmap(renderScript, bitmap);
+        Log.d(TAG, "rs init 2");
+        Allocation in = Allocation.createFromBitmap(renderScript, bitmap, Allocation.MipmapControl.MIPMAP_NONE, Allocation.USAGE_SCRIPT);
         Allocation out = Allocation.createTyped(renderScript, new Type.Builder(renderScript, Element.U8(renderScript))
                 .setX(bitmap.getWidth()).setY(bitmap.getHeight()).setMipmaps(false).create());
         Log.d(TAG, "rs start");
         scriptC_fastDehazor.forEach_GetDarkChannel(in, out);
         renderScript.finish();
         Log.d(TAG, "rs end");
+        in.copyTo(bitmap);
+        Log.d(TAG, "rs copy end");
 
 
         //the test for jni

@@ -33,3 +33,14 @@ JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_OpenCVMethod_fastDehazor(JNI
     AndroidBitmap_unlockPixels(env, bitmap);
 }
 
+JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_OpenCVMethod_getDark(JNIEnv *env, jclass cls, jobject bitmap, int width, int height) {
+    LOG("fast  dehazor  begin");
+    char * data;
+    UCHAR * out = (UCHAR *)malloc(sizeof(UCHAR) * width * height);
+    AndroidBitmap_lockPixels(env, bitmap, (void **)&data);
+  //  fastDehazor->process((UCHAR *)data, width, height);
+
+    AndroidBitmap_unlockPixels(env, bitmap);
+    LOG("fast   dehazor  end");
+}
+
