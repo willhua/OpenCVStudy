@@ -32,7 +32,7 @@ public class MainActivity extends Activity {
     ImageView mAfterImage;
 
 
-    String file = "1920-1080" + ".jpg";
+    String file = "900-600城市" + ".jpg";
 
 
     @Override
@@ -108,7 +108,9 @@ public class MainActivity extends Activity {
         RenderScript renderScript = RenderScript.create(getApplication());
         ScriptC_FastDehazor scriptC_fastDehazor = new ScriptC_FastDehazor(renderScript);
         Log.d(TAG, "rs init 2");
-        Allocation in = Allocation.createFromBitmap(renderScript, bitmap, Allocation.MipmapControl.MIPMAP_NONE, Allocation.USAGE_SCRIPT);
+        Allocation in = Allocation.createFromBitmap(renderScript, bitmap);
+        //Bitmap outB = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+        //Allocation out = Allocation.createFromBitmap(renderScript, outB);
         //Allocation out = Allocation.createTyped(renderScript, new Type.Builder(renderScript, Element.U8(renderScript))
         //        .setX(bitmap.getWidth()).setY(bitmap.getHeight()).setMipmaps(false).create());
         Log.d(TAG, "rs start");

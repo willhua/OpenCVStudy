@@ -1,6 +1,6 @@
 #pragma version(1)
 #pragma rs java_package_name(com.willhua.opencvstudy.rs)
-#pragma rs_fp_relaxed
+//#pragma rs_fp_relaxed
 
 #pragma rs reduce(getSum) accumulator(getSumAccumulator) combiner(getSumCombiner)
 
@@ -17,14 +17,21 @@ static float gDivAir;
 static rs_allocation gTable;
 static rs_allocation gRawImage;
 static rs_allocation gLx;
+static rs_allocation gDivN;
 float gP;
 int gWidth;
 int gHeight;
 int gRadius;
+int gRadius_1;
+int gDivMax;
 
 
 void init()
 {
+	gP = 1.6f;
+    gRadius = 30;
+    gRadius_1 = gRadius - 1;
+    gDivMax = (gRadius * 2 + 1) * (gRadius * 2 + 1);
 
 }
 
@@ -38,8 +45,9 @@ int RS_KERNEL getRowSum(uint v, uint32_t x)
     int sum = 0;
     for(int i = 0; i < gWidth; ++i)
     {
-        sum += rsGetElementAt_char(gDarkChan, x, i);
+        sum += rsGetElementAt_uchar(gDarkChan, i, x);
     }
+	//rsDebug("main   getRowSum  ", sum);
     return sum;
 }
 
@@ -61,22 +69,26 @@ void RS_KERNEL accumColumn(uchar v, uint32_t x)
         sum += rsGetElementAt_uchar(gDarkChan, x, i);
         rsSetElementAt_uint(gAccum, sum, x, i);
     }
+	//rsDebug("main   accumColumn  sum:", sum);
 }
 
 uint RS_KERNEL diffColumn(uint v, int x, int y)
 {
+	uint result = 0;
     if(y < gRadius + 1)
     {
-        return v;
+        result =  rsGetElementAt_uint(gAccum, x, y + gRadius);
     }
-    else if (y < gHeight - gRadius - 1)
+    else if (y < gHeight - gRadius_1)
     {
-        return rsGetElementAt_uint(gAccum, x, y + gRadius) - rsGetElementAt_uint(gAccum, x, y - gRadius - 1);
+        result = rsGetElementAt_uint(gAccum, x, y + gRadius) - rsGetElementAt_uint(gAccum, x, y - gRadius_1);
     }
     else
     {
-        return rsGetElementAt_uint(gAccum, x, gHeight - 1) - rsGetElementAt_uint(gAccum, x, y - gRadius - 1);
+        result =  rsGetElementAt_uint(gAccum, x, gHeight - 1) - rsGetElementAt_uint(gAccum, x, y - gRadius_1);
     }
+	//rsDebug("main  diffColumn ", result);
+	return result;
 }
 
 void RS_KERNEL accumRow(uint v, int x)
@@ -85,41 +97,38 @@ void RS_KERNEL accumRow(uint v, int x)
     for(int i = 0; i < gWidth; ++i)
     {
         //前面diff column的值放在gMave中
-        sum += rsGetElementAt_uchar(gMave, i, x);
+        sum += rsGetElementAt_uint(gMave, i, x);
         rsSetElementAt_uint(gAccum, sum, i, x);
     }
+	//rsDebug("main  accumRow ", sum);
 }
 
 uint RS_KERNEL diffRow(uint v, int x, int y)
 {
+    uint div = rsGetElementAt_uint(gDivN, x, y);
+	uint result;
     if(x < gRadius + 1)
     {
-        return v;
+        result =  rsGetElementAt_uint(gAccum, x + gRadius, y) / div;
     }
-    else if (x < gWidth - gRadius - 1)
+    else if (x < gWidth - gRadius_1)
     {
-        return rsGetElementAt_uint(gAccum, x + gRadius, y) - rsGetElementAt_uint(gAccum, x - gRadius - 1, y);
+        result = (rsGetElementAt_uint(gAccum, x + gRadius, y) - rsGetElementAt_uint(gAccum, x - gRadius_1, y)) / div;
     }
     else
     {
-        return rsGetElementAt_uint(gAccum, gWidth - 1, y) - rsGetElementAt_uint(gAccum, x - gRadius - 1, y);
+        result = (rsGetElementAt_uint(gAccum, gWidth - 1, y) - rsGetElementAt_uint(gAccum, x - gRadius_1, y)) / div;
     }
+	//rsDebug("main    diffRow ", result);
+	return result;
 }
 
-/* static void RS_KERNEL accumRow(uint v, int x)
+uchar RS_KERNEL getLx(uint v1, int x, int y)
 {
-    uint sum = 0;
-    for(int i = 0; i < gWidth; ++i)
-    {
-        sum += rsGetElementAt_uchar(gDarkChan, i, x);
-        rsSetElementAt_uint(gAccum, sum, i, x);
-    }
-} */
-
-uchar RS_KERNEL getLx(float v1, uchar v2)
-{
-    v1 = v1 * gP;
-    if(v1 < v2) return (uchar)v1;
+	float v2 = rsGetElementAt_uchar(gDarkChan, x , y);
+    float v3 = v1 * gP;
+	//rsDebug("main  getLx ",v1,v2, v3);
+    if(v3 < v2) return (uchar)v3;
     return v2;
 }
 
@@ -149,7 +158,18 @@ uint RS_KERNEL getRowMax(uint v, int x)
 
 uchar RS_KERNEL getTable(uchar v, int x, int y)
 {
-    return (uchar)((x - y) / (1 - y * gDivAir));
+    int result = (x - y) / (1 - y * gDivAir);
+    if(result < 0) return 0;
+    if(result > 255) return (uchar)255;
+    return (uchar)(result);
+}
+
+static uchar calResult(int x, int y)
+{
+    float result = (x - y) / (1 - y * gDivAir);
+    if(result < 0) return 0;
+    if(result > 255) return (uchar)255;
+    return (uchar)(result);
 }
 
 uchar4 RS_KERNEL setResult(uchar4 in, uint32_t x, uint32_t y)
@@ -161,6 +181,21 @@ uchar4 RS_KERNEL setResult(uchar4 in, uint32_t x, uint32_t y)
     out.b = rsGetElementAt_uchar(gTable, in.b, lx);
     out.a = in.a;
     return out;
+}
+
+uint RS_KERNEL getDivMatrix(uint v, int x, int y)
+{
+    if (x >= gRadius && x <= gWidth - gRadius_1 && y >= gRadius && y <= gHeight - gRadius_1) {
+    	return gDivMax;
+    } else {
+        uint m = gWidth - 1 - x;
+        if( m > x) m = x;
+        if(m > gRadius) m = gRadius;
+    	uint n = gHeight - 1 - y;
+    	if(n > y) n = y;
+    	if(n > gRadius) n = gRadius;
+        return (gRadius + 1 + m) * (gRadius + 1 + n);//对于边缘的
+    }
 }
 
 static void getSumAccumulator(long *sum, uchar c)
@@ -194,13 +229,18 @@ void fastProcess(rs_allocation inImage, int width, int height)
     long sum = 0;
     for(int i = 0; i < height; ++i)
     {
-        sum += rsGetElementAt_int(rowSum, i);
+        sum += rsGetElementAt_uint(rowSum, i);
     }
     gMav = sum / LEN / 255.0f; //求得暗通道的元素平均值mav
+	rsDebug("main    gMav:", gMav, sum);
     gP = gP * gMav;
     if(gP > MAX_P) gP = MAX_P;
 
     //均值滤波
+    gDivN = rsCreateAllocation_uint(width, height);
+    //rsDebug("main  div   1", 1);
+    rsForEach(getDivMatrix, gDivN, gDivN);
+    //rsDebug("main  div   2", 2);
     gMave = rsCreateAllocation_uint(width, height);
     gAccum = rsCreateAllocation_uint(width, height);
     //copy(mave, gDarkChan, width, height);
@@ -212,7 +252,7 @@ void fastProcess(rs_allocation inImage, int width, int height)
 
     //步骤5
     gLx = rsCreateAllocation_uchar(gWidth, gHeight);
-    rsForEach(getLx, gMave, gDarkChan, gLx);
+    rsForEach(getLx, gMave, gLx);
 
 
     //步骤6
@@ -231,7 +271,9 @@ void fastProcess(rs_allocation inImage, int width, int height)
         if(v > max2) max2 = v;
     }
     gAir = (max1 + max2) / 2;
+    rsDebug("main   gAir:", gAir);
     gDivAir = 1.0f / gAir;
+    rsDebug("main   gDivAir:", gDivAir);
     gTable = rsCreateAllocation_uchar(256, 256);
     rsForEach(getTable, gTable, gTable);
     rsForEach(setResult, inImage, inImage);
