@@ -1,6 +1,6 @@
 #pragma version(1)
 #pragma rs java_package_name(com.willhua.opencvstudy.rs)
-//#pragma rs_fp_relaxed
+#pragma rs_fp_relaxed
 
 #pragma rs reduce(getSum) accumulator(getSumAccumulator) combiner(getSumCombiner)
 
@@ -28,8 +28,8 @@ int gDivMax;
 
 void init()
 {
-	gP = 1.6f;
-    gRadius = 30;
+	gP = 1.3f;
+    gRadius = 20;
     gRadius_1 = gRadius - 1;
     gDivMax = (gRadius * 2 + 1) * (gRadius * 2 + 1);
 

@@ -32,7 +32,8 @@ public class MainActivity extends Activity {
     ImageView mAfterImage;
 
 
-    String file = "900-600城市" + ".jpg";
+    String file = "1920-1080森林" + ".jpg";
+    //String file = "4288-2848" + ".jpg";
 
 
     @Override
@@ -64,7 +65,7 @@ public class MainActivity extends Activity {
                 AssetManager am = getAssets();
                 try {
 
-                    rsTest();
+               //     rsTest();
 
 
                     InputStream fis = am.open(file);
@@ -76,8 +77,10 @@ public class MainActivity extends Activity {
                  //   OpenCVMethod.dehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
                     Log.d(TAG, "dehazor start");
                     OpenCVMethod.fastDehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
+                    Log.d(TAG, "dehazor start  2");
+                    OpenCVMethod.fastDehazorCV(bitmap, bitmap.getWidth(), bitmap.getHeight());
                     Log.d(TAG, "dehazor  end " + bitmap.getWidth() + " *" + bitmap.getHeight());
-                    //mAfterImage.setImageBitmap(bitmap);
+                    mAfterImage.setImageBitmap(bitmap);
                     fis.close();
                 } catch (IOException e) {
                     e.printStackTrace();

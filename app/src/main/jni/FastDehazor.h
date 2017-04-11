@@ -4,13 +4,8 @@
 #include <stdio.h>
 //#include <string>
 #include <stdlib.h>
-#include <opencv2/core/core.hpp>
-//#include <opencv.hpp>
 #include <android/log.h>
 #include <time.h>
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/core/types_c.h>
 #define MINT(a,b,c) ((a)<(b)?((a)<(c)?(a):(c)):((b)<(c)?(b):(c)))
 //#define MAX(a,b) (a>b?a:b)
 //#define MIN(a,b) (a<b?a:b)
