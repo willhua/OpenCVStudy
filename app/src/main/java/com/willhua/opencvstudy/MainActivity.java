@@ -5,6 +5,7 @@ import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.os.Environment;
 import android.renderscript.Allocation;
 import android.renderscript.RenderScript;
 import android.util.Log;
@@ -12,10 +13,14 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.willhua.opencvstudy.rs.ScriptC_FastDehazor;
 import com.willhua.opencvstudy.rs.ScriptC_Rgb2Yuv;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -43,6 +48,7 @@ public class MainActivity extends Activity {
     @BindView(R.id.btn)
     Button mBtnStart;
 
+    String mDirectory = Environment.getExternalStorageDirectory().getPath() + "/去雾结果图";
     String mBitmapFile = "1920-1080田野" + ".jpg";
     //String mBitmapFile = "1920-1080森林" + ".jpg";
     //String mBitmapFile = "haze" + ".jpg";
@@ -54,7 +60,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        floatTest();
+        fileCheck();
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -63,30 +69,6 @@ public class MainActivity extends Activity {
                 nativeAlgorithmTest();
             }
         }).start();
-    }
-
-    void setAfterImage(final Bitmap bitmap) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mAfterImage.setImageBitmap(bitmap);
-            }
-        });
-    }
-
-    void setBeforeImage(final Bitmap bitmap) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mBeforeImage.setImageBitmap(bitmap);
-            }
-        });
-    }
-
-    native void floatTest();
-
-    static {
-        System.loadLibrary("OpenCV");
     }
 
     void nativeAlgorithmTest() {
@@ -207,4 +189,70 @@ public class MainActivity extends Activity {
 
 
     }
+
+
+
+
+
+    native void floatTest();
+
+    static {
+        System.loadLibrary("OpenCV");
+    }
+
+
+    void fileCheck(){
+        File file = new File(mDirectory);
+        if(!file.exists()){
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    void writeBitmapToFile(final Bitmap bitmap, final String name){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                boolean result = false;
+                final File file = new File(mDirectory + "/" + System.currentTimeMillis() + "_" + name + ".jpg");
+                if(bitmap != null){
+                    try {
+                        result = bitmap.compress(Bitmap.CompressFormat.JPEG, 98, new FileOutputStream(file));
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if(!result){
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(getApplicationContext(), "图片保存失败：" + file.getName(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+            }
+        }).start();
+    }
+
+    void setAfterImage(final Bitmap bitmap) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mAfterImage.setImageBitmap(bitmap);
+            }
+        });
+    }
+
+    void setBeforeImage(final Bitmap bitmap) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mBeforeImage.setImageBitmap(bitmap);
+            }
+        });
+    }
+
 }
