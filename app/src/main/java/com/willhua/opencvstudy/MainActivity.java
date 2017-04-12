@@ -6,23 +6,22 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.renderscript.Allocation;
-import android.renderscript.Element;
 import android.renderscript.RenderScript;
-import android.renderscript.Type;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.SeekBar;
+import android.widget.TextView;
 
 import com.willhua.opencvstudy.rs.ScriptC_FastDehazor;
 import com.willhua.opencvstudy.rs.ScriptC_Rgb2Yuv;
 
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-import static android.renderscript.Allocation.USAGE_SCRIPT;
 import static android.renderscript.Allocation.USAGE_SHARED;
 
 
@@ -33,10 +32,21 @@ public class MainActivity extends Activity {
     ImageView mBeforeImage;
     @BindView(R.id.after)
     ImageView mAfterImage;
+    @BindView(R.id.param1)
+    SeekBar mSeekBarP1;
+    @BindView(R.id.info_param1)
+    TextView mInfoP1;
+    @BindView(R.id.param2)
+    SeekBar mSeekBarP2;
+    @BindView(R.id.info_param2)
+    TextView mInfoP2;
+    @BindView(R.id.btn)
+    Button mBtnStart;
 
-
-    String file = "1920-1080森林" + ".jpg";
-    //String file = "4288-2848" + ".jpg";
+    String mBitmapFile = "1920-1080田野" + ".jpg";
+    //String mBitmapFile = "1920-1080森林" + ".jpg";
+    //String mBitmapFile = "haze" + ".jpg";
+    //String mBitmapFile = "4288-2848" + ".jpg";
 
 
     @Override
@@ -48,61 +58,65 @@ public class MainActivity extends Activity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-           /*     Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.pic);
-                long time = System.currentTimeMillis();
-                mBeforeImage.setImageBitmap(bitmap);
-                int w = bitmap.getWidth(), h = bitmap.getHeight();
-                int[] pix = new int[w * h];
-                bitmap.getPixels(pix, 0, w, 0, 0, w, h);
-                long time2 = System.currentTimeMillis();
-                int [] resultPixes=OpenCVMethod.gray(pix,w,h);
-                time2 = System.currentTimeMillis() - time2;
-                Bitmap result = Bitmap.createBitmap(w,h, Bitmap.Config.RGB_565);
-                result.setPixels(resultPixes, 0, w, 0, 0,w, h);
-                Log.d(TAG, "opencvtime:" + time2 + " " + (System.currentTimeMillis() - time ) + "BITMAP:" + result.getWidth() + "*" + result.getHeight());
-                mAfterImage.setImageBitmap(result);
-
-                floatTest(); */
-                //  img.setImageBitmap(result);
-
-                AssetManager am = getAssets();
-                try {
-
-               //     rsTest();
-                    rgb2yuv();
-
-                    InputStream fis = am.open(file);
-                    Bitmap bitmap = BitmapFactory.decodeStream(fis);
-                    fis.close();
-                    fis = am.open(file);
-                    Bitmap bitmap1 = BitmapFactory.decodeStream(fis);
-                    mBeforeImage.setImageBitmap(bitmap1);
-                 //   OpenCVMethod.dehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
-                    Log.d(TAG, "dehazor start");
-                    OpenCVMethod.fastDehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
-                    Log.d(TAG, "dehazor start  2");
-                    OpenCVMethod.fastDehazorCV(bitmap, bitmap.getWidth(), bitmap.getHeight());
-                    Log.d(TAG, "dehazor  end " + bitmap.getWidth() + " *" + bitmap.getHeight());
-                    mAfterImage.setImageBitmap(bitmap);
-                    fis.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                //rgb2yuv();
+                //fastDehazorRsTest();
+                nativeAlgorithmTest();
             }
-        }).run();
+        }).start();
+    }
+
+    void setAfterImage(final Bitmap bitmap) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mAfterImage.setImageBitmap(bitmap);
+            }
+        });
+    }
+
+    void setBeforeImage(final Bitmap bitmap) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mBeforeImage.setImageBitmap(bitmap);
+            }
+        });
     }
 
     native void floatTest();
+
     static {
         System.loadLibrary("OpenCV");
     }
 
-    void rgb2yuv(){
+    void nativeAlgorithmTest() {
+        try {
+            AssetManager am = getAssets();
+            InputStream fis = am.open(mBitmapFile);
+            Bitmap bitmap = BitmapFactory.decodeStream(fis);
+            fis.close();
+            fis = am.open(mBitmapFile);
+            Bitmap bitmap1 = BitmapFactory.decodeStream(fis);
+            setBeforeImage(bitmap1);
+            Log.d(TAG, "dehazor start");
+            OpenCVMethod.dehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
+            //OpenCVMethod.fastDehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
+            Log.d(TAG, "dehazor start  2");
+            //OpenCVMethod.fastDehazorCV(bitmap, bitmap.getWidth(), bitmap.getHeight(), 100);
+            Log.d(TAG, "dehazor  end " + bitmap.getWidth() + " *" + bitmap.getHeight());
+            setAfterImage(bitmap);
+            fis.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void rgb2yuv() {
         AssetManager am = getAssets();
         InputStream fis = null;
         Bitmap bitmap = null;
         try {
-            fis = am.open(file);
+            fis = am.open(mBitmapFile);
             bitmap = BitmapFactory.decodeStream(fis);
             fis.close();
         } catch (IOException e) {
@@ -115,7 +129,7 @@ public class MainActivity extends Activity {
         scriptC_rgb2Yuv.invoke_initEnv();
         Log.d(TAG, " init  3");
         Allocation in = Allocation.createFromBitmap(renderScript, bitmap, Allocation.MipmapControl.MIPMAP_NONE,
-                USAGE_SHARED );
+                USAGE_SHARED);
         Log.d(TAG, " init  4");
         in.copyFrom(bitmap);
         Log.d(TAG, " init  5");
@@ -161,14 +175,15 @@ public class MainActivity extends Activity {
         Log.d(TAG, " init  7");
     }
 
-    void rsTest(){
+    void fastDehazorRsTest() {
         AssetManager am = getAssets();
         InputStream fis = null;
         Bitmap bitmap = null;
         try {
-            fis = am.open(file);
+            fis = am.open(mBitmapFile);
             bitmap = BitmapFactory.decodeStream(fis);
             fis.close();
+            setBeforeImage(bitmap);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -178,11 +193,7 @@ public class MainActivity extends Activity {
         RenderScript renderScript = RenderScript.create(getApplication());
         ScriptC_FastDehazor scriptC_fastDehazor = new ScriptC_FastDehazor(renderScript);
         Log.d(TAG, "rs init 2");
-        Allocation in = Allocation.createFromBitmap(renderScript, bitmap);
-        //Bitmap outB = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
-        //Allocation out = Allocation.createFromBitmap(renderScript, outB);
-        //Allocation out = Allocation.createTyped(renderScript, new Type.Builder(renderScript, Element.U8(renderScript))
-        //        .setX(bitmap.getWidth()).setY(bitmap.getHeight()).setMipmaps(false).create());
+        Allocation in = Allocation.createFromBitmap(renderScript, bitmap, Allocation.MipmapControl.MIPMAP_NONE, USAGE_SHARED);
         Log.d(TAG, "rs start");
         //scriptC_fastDehazor.forEach_getDarkChannel(in, out);
         scriptC_fastDehazor.invoke_fastProcess(in, bitmap.getWidth(), bitmap.getHeight());
@@ -190,7 +201,7 @@ public class MainActivity extends Activity {
         Log.d(TAG, "rs end");
         in.copyTo(bitmap);
         Log.d(TAG, "rs copy end");
-        mAfterImage.setImageBitmap(bitmap);
+        setAfterImage(bitmap);
 
         //the test for jni
 
