@@ -215,6 +215,9 @@ static void copy(rs_allocation des, rs_allocation src, int width, int height)
 
 void fastProcess(rs_allocation inImage, int width, int height)
 {
+#ifdef DEBUG
+    rsDebug("main fast process", 1);
+#endif
     //      const uint32_t imageWidth = rsAllocationGetDimX(inputImage);
     gRawImage = inImage;
     gWidth = width;
