@@ -10,3 +10,6 @@
 /native/jni
 /native/libs
 /native/3rdparty
+*.o
+*.a
+*.o.d
