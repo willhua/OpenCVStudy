@@ -22,6 +22,8 @@ import java.io.InputStream;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
+import static android.renderscript.Allocation.USAGE_SCRIPT;
+import static android.renderscript.Allocation.USAGE_SHARED;
 
 
 public class MainActivity extends Activity {
@@ -67,7 +69,7 @@ public class MainActivity extends Activity {
                 try {
 
                //     rsTest();
-                    //rgb2yuv();
+                    rgb2yuv();
 
                     InputStream fis = am.open(file);
                     Bitmap bitmap = BitmapFactory.decodeStream(fis);
@@ -110,13 +112,53 @@ public class MainActivity extends Activity {
         RenderScript renderScript = RenderScript.create(getApplication());
         Log.d(TAG, " init  2");
         ScriptC_Rgb2Yuv scriptC_rgb2Yuv = new ScriptC_Rgb2Yuv(renderScript);
+        scriptC_rgb2Yuv.invoke_initEnv();
         Log.d(TAG, " init  3");
-        Allocation in = Allocation.createFromBitmap(renderScript, bitmap);
+        Allocation in = Allocation.createFromBitmap(renderScript, bitmap, Allocation.MipmapControl.MIPMAP_NONE,
+                USAGE_SHARED );
         Log.d(TAG, " init  4");
         in.copyFrom(bitmap);
         Log.d(TAG, " init  5");
-        scriptC_rgb2Yuv.invoke_rgb2yuv(in, bitmap.getWidth(), bitmap.getHeight());
+        //scriptC_rgb2Yuv.invoke_rgb2yuv(in, bitmap.getWidth(), bitmap.getHeight());
+        scriptC_rgb2Yuv.forEach_toYUV(in);
+        renderScript.finish();
         Log.d(TAG, " init  6");
+
+        Log.d(TAG, " init  400000000");
+        in.copyFrom(bitmap);
+        Log.d(TAG, " init  5");
+        scriptC_rgb2Yuv.forEach_toYUV(in);
+        //scriptC_rgb2Yuv.invoke_rgb2yuv(in, bitmap.getWidth(), bitmap.getHeight());
+        renderScript.finish();
+        Log.d(TAG, " init  6");
+
+        Log.d(TAG, " init  40000000000");
+        in.copyFrom(bitmap);
+        Log.d(TAG, " init  5");
+        scriptC_rgb2Yuv.forEach_toYUV(in);
+        //scriptC_rgb2Yuv.invoke_rgb2yuv(in, bitmap.getWidth(), bitmap.getHeight());
+        Log.d(TAG, " init  6");
+        renderScript.finish();
+        Log.d(TAG, " init  7");
+
+        Log.d(TAG, " init  40000000000");
+        in.copyFrom(bitmap);
+        Log.d(TAG, " init  5");
+        scriptC_rgb2Yuv.forEach_toYUV(in);
+        //scriptC_rgb2Yuv.invoke_rgb2yuv(in, bitmap.getWidth(), bitmap.getHeight());
+        Log.d(TAG, " init  6");
+        renderScript.finish();
+        Log.d(TAG, " init  7");
+
+
+        Log.d(TAG, " init  40000000000");
+        in.copyFrom(bitmap);
+        Log.d(TAG, " init  5");
+        scriptC_rgb2Yuv.forEach_toYUV(in);
+        //scriptC_rgb2Yuv.invoke_rgb2yuv(in, bitmap.getWidth(), bitmap.getHeight());
+        Log.d(TAG, " init  6");
+        renderScript.finish();
+        Log.d(TAG, " init  7");
     }
 
     void rsTest(){

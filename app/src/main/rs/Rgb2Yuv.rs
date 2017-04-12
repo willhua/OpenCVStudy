@@ -11,13 +11,14 @@ rs_allocation ug;
 rs_allocation vr;
 rs_allocation vb;
 rs_allocation vg;
+rs_allocation ta;
 
 rs_allocation yuv;
 
 int gwidth;
 int gheight;
 
-void initalloc()
+static void initalloc()
 {
     yr = rsCreateAllocation_uchar(256);
     yg = rsCreateAllocation_uchar(256);
@@ -28,7 +29,7 @@ void initalloc()
     vr = rsCreateAllocation_uchar(256);
     vg = rsCreateAllocation_uchar(256);
     vb = rsCreateAllocation_uchar(256);
-    yuv = rsCreateAllocation_uchar(1920, 1820 + (1820 >> 1));
+    yuv = rsCreateAllocation_uchar(gwidth, gheight + (gheight >> 1));
 }
 
 void RS_KERNEL initTable(uchar v, int x)
@@ -52,22 +53,21 @@ void RS_KERNEL toYUV(uchar4 in, int x, int y)
     {
         uchar u = rsGetElementAt_uchar(ub, in.b) - rsGetElementAt_uchar(ur, in.r) - rsGetElementAt_uchar(ug, in.g);
         uchar v = rsGetElementAt_uchar(vr, in.r) - rsGetElementAt_uchar(vg, in.g) - rsGetElementAt_uchar(vb, in.b);
-        y = y >> 1 + gheight;
+        y = (y >> 1) + gheight;
         rsSetElementAt_uchar(yuv, x, y);
         rsSetElementAt_uchar(yuv, x + 1, y);
     }
 }
 
-void rgb2yuv(rs_allocation in, int w, int h)
+void initEnv()
 {
-    gwidth = w;
-    gheight = h;
+
+    rsDebug("init   init ", 1);
+    gwidth = 1920;
+    gheight = 1080;
     rsDebug("initalloc ", 1);
     initalloc();
     rsDebug("initalloc ", 2);
-    rs_allocation ta = rsCreateAllocation_uchar(256);
+    ta = rsCreateAllocation_uchar(256);
     rsForEach(initTable, ta);
-    rsDebug("initalloc intitable end", 3);
-    rsForEach(toYUV, in);
-    rsDebug("initalloc toyuv end", 4);
 }
