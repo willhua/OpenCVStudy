@@ -5,14 +5,10 @@
 #include "FastDehazorCV.h"
 #include <pthread.h>
 
-#define LOG(...) __android_log_print(ANDROID_LOG_VERBOSE, "fastdehazorcv", __VA_ARGS__)
-
-
 using namespace cv;
 
-FastDehazorCV::FastDehazorCV(JavaVM * vm)
+FastDehazorCV::FastDehazorCV()
 {
-    FastDehazorCV::mVM = vm;
     mP = 1.5f;
     mSkyThreshold = 15;
     mResultTable = (unsigned char *)malloc(sizeof(unsigned char) * 256 * 256);
@@ -74,8 +70,8 @@ typedef struct GetDarkParam
 void * FastDehazorCV::getDarkThread(void * args)
 {
     JNIEnv* env = NULL;
-    long * sum = (long *)malloc(sizeof(long));
-    if(0 == FastDehazorCV::mVM->AttachCurrentThread(&env, NULL))
+    long sum = 0;
+    if(0 == JniEnvInit::gVM->AttachCurrentThread(&env, NULL))
     {
         GetDarkParam * param = (GetDarkParam *)args;
         int end  = param->end;
@@ -85,12 +81,13 @@ void * FastDehazorCV::getDarkThread(void * args)
         for(int i = param->start, j = (i << 2) - 1; i < end; ++i, ++j)
         {
             dark = MINT(rgba[++j], rgba[++j], rgba[++j]);
-            (*sum) = (*sum) + dark;
+            sum += dark;
             out[i] = dark;
         }
-        FastDehazorCV::mVM->DetachCurrentThread();
+        JniEnvInit::gVM->DetachCurrentThread();
     }
-    return sum;
+    LOG("sum   %d", sum);
+    return (void *)sum;
 }
 
 
@@ -103,16 +100,16 @@ unsigned char FastDehazorCV::getDarkChannel(unsigned char * rgba, unsigned char 
     GetDarkParam params[5];
     for(int i = 0; i < 5; ++i)
     {
-        params->rgba = rgba;
-        params->out = out;
-        params->start = width * i * heightUnit;
+        params[i].rgba = rgba;
+        params[i].out = out;
+        params[i].start = width * i * heightUnit;
         if(i == 4)
         {
-            params->end = width * height;
+            params[i].end = width * height;
         }
         else
         {
-            params->end = width * (i + 1) * heightUnit;
+            params[i].end = width * (i + 1) * heightUnit;
         }
         int result = pthread_create(&pts[i], NULL, getDarkThread, (void *)(&params[i]));
         if(result != 0)
@@ -124,10 +121,14 @@ unsigned char FastDehazorCV::getDarkChannel(unsigned char * rgba, unsigned char 
     for(int i = 0; i < 5; ++i)
     {
         void * result;
-        if(0 != pthread_join(pts[i], &result))
+        if(0 == pthread_join(pts[i], &result))
         {
-            sum += *((long *)result);
-            delete result;
+            sum += (long *)result;
+            LOG("result   %d", result);
+        }
+        else
+        {
+            LOG("getDarkChannel join fail ");
         }
     }
     return (unsigned char)(sum / width / height);

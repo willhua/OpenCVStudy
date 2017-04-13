@@ -2,23 +2,12 @@
 // Created by willhua on 2017/3/21.
 //
 
-#include <jni.h>
-#include <android/log.h>
-#include <android/bitmap.h>
+
 
 #ifndef OPENCVSTUDY_DEHAZOR_H
 #define OPENCVSTUDY_DEHAZOR_H
 
-#define LOG(...) __android_log_print(ANDROID_LOG_DEBUG, "lyhopencvn", __VA_ARGS__)
-
-JavaVM *gVM;
-
-jint JNI_OnLoad(JavaVM* vm, void * reserverd)
-{
-    LOG("JNI_Onload Dehazor.h");
-    gVM = vm;
-    return JNI_VERSION_1_4;
-}
+#include "JniEnvInit.h"
 
 #ifdef __cplusplus
 extern "C" {

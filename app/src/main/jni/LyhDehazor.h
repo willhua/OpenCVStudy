@@ -1,20 +1,9 @@
 #pragma once
 
-#include <jni.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/opencv.hpp>
-#include <android/log.h>
-#include <time.h>
-//#include <opencv2/core/core.hpp>
-//#include <opencv2/imgproc/imgproc.hpp>
+#include "JniEnvInit.h"
 
-#define MINT(a,b,c) ((a)<(b)?   ((a)<(c)?(a):(c))   :  ((b)<(c)?(b):(c))    )
-#define MAX(a,b) ((a)>(b)?(a):(b))
-#define MIN(a,b) ((a)<(b)?(a):(b))
-#define MUL(a,b,c) (a[c] * b[c])
-#define CLAM(a) ((a) > 255 ? 255 : ((a) < 0 ? 0 : (a)))
 #define UCHAR unsigned char
 #define DEBUG false
 class LyhDehazor

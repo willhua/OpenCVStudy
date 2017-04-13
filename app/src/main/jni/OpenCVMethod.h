@@ -2,12 +2,10 @@
 // Created by willhua on 2017/3/11.
 //
 
-#include <jni.h>
-#include <android/log.h>
 #ifndef OPENCVSTUDY_OPENCVMETHOD_H
 #define OPENCVSTUDY_OPENCVMETHOD_H
 
-#define LOG(...) __android_log_print(ANDROID_LOG_DEBUG, "lyhopencvn", __VA_ARGS__)
+#include "JniEnvInit.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -3,8 +3,7 @@
 //
 
 #include "OpenCVMethod.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include "JniEnvInit.h"
 #include <opencv2\opencv.hpp>
 
 using namespace cv;
