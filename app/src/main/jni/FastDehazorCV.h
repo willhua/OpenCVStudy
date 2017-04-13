@@ -4,7 +4,7 @@
 
 #pragma once
 
-//#include <jni.h>
+#include <jni.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <opencv2/core/core.hpp>
@@ -19,10 +19,6 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define ABS(a) ((a) > 0 ? (a) : (-a))
-
-#define LOG(...) __android_log_print(ANDROID_LOG_VERBOSE, "fastdehazorcv", __VA_ARGS__)
-
-
 #define INPUT_NULL -1
 #define MAX_P 0.9f
 
@@ -30,12 +26,16 @@
 class FastDehazorCV
 {
 public:
-    FastDehazorCV();
+    FastDehazorCV(JavaVM * vm);
     ~FastDehazorCV();
     int process(unsigned char * rgba, int width, int height, int boxRadius);
     void setP(float p);
+    static JavaVM * mVM;
 protected:
 private:
+    static void * getDarkThread(void * args);
+    unsigned char getDarkChannel(unsigned char * rgba, unsigned char * out, int width, int height);
+
     int * mDivN;
     float mP;
     int mSkyThreshold;

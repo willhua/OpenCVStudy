@@ -36,7 +36,7 @@ JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_OpenCVMethod_fastDehazor(JNI
 
 JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_OpenCVMethod_fastDehazorCV(JNIEnv *env, jclass cls, jobject bitmap, int width, int height, int radius) {
     LOG("fast  dehazor  begin");
-    FastDehazorCV *fastDehazorCV = new FastDehazorCV();
+    FastDehazorCV *fastDehazorCV = new FastDehazorCV(gVM);
     char * data;
 
     AndroidBitmap_lockPixels(env, bitmap, (void **)&data);

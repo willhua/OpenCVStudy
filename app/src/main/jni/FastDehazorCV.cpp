@@ -3,11 +3,16 @@
 //
 
 #include "FastDehazorCV.h"
+#include <pthread.h>
+
+#define LOG(...) __android_log_print(ANDROID_LOG_VERBOSE, "fastdehazorcv", __VA_ARGS__)
+
 
 using namespace cv;
 
-FastDehazorCV::FastDehazorCV()
+FastDehazorCV::FastDehazorCV(JavaVM * vm)
 {
+    FastDehazorCV::mVM = vm;
     mP = 1.5f;
     mSkyThreshold = 15;
     mResultTable = (unsigned char *)malloc(sizeof(unsigned char) * 256 * 256);
@@ -34,8 +39,8 @@ void FastDehazorCV::InitResultTable()
     float air = 1.0f / mAir;
     int index = 0;
     float result;
-    int threshold = mAir - mSkyThreshold;
-    for(int i = 0; i < threshold; ++i) //符合暗通道的区域
+  //  int threshold = mAir - mSkyThreshold;
+    for(int i = 0; i < 256; ++i) //符合暗通道的区域
     {
         for(int j = 0; j < 256; ++j)
         {
@@ -43,7 +48,7 @@ void FastDehazorCV::InitResultTable()
             mResultTable[index++] = (unsigned char)CLAM(result);
         }
     }
-    for (int i = threshold; i < 256; ++i) {//天空区域，需要增大透射率
+ /*   for (int i = threshold; i < 256; ++i) {//天空区域，需要增大透射率
         for(int j = 0; j < 256; ++j)
         {
             float scale = ABS(mAir - j) / (float)75;
@@ -52,8 +57,85 @@ void FastDehazorCV::InitResultTable()
             LOG("inittable       old %d   new  %d", j, newlx);
             mResultTable[index++] = (unsigned char)CLAM(result);
         }
-    }
+    }   */
 }
+
+
+
+typedef struct GetDarkParam
+{
+    unsigned char * rgba;
+    unsigned char * out;
+    int start;  //以像素为单位的，即对于out可以直接使用，但是对于rgba则需要乘以4
+    int end;
+};
+
+
+void * FastDehazorCV::getDarkThread(void * args)
+{
+    JNIEnv* env = NULL;
+    long * sum = (long *)malloc(sizeof(long));
+    if(0 == FastDehazorCV::mVM->AttachCurrentThread(&env, NULL))
+    {
+        GetDarkParam * param = (GetDarkParam *)args;
+        int end  = param->end;
+        unsigned char * out = param->out;
+        unsigned char * rgba = param->rgba;
+        unsigned char dark;
+        for(int i = param->start, j = (i << 2) - 1; i < end; ++i, ++j)
+        {
+            dark = MINT(rgba[++j], rgba[++j], rgba[++j]);
+            (*sum) = (*sum) + dark;
+            out[i] = dark;
+        }
+        FastDehazorCV::mVM->DetachCurrentThread();
+    }
+    return sum;
+}
+
+
+
+
+unsigned char FastDehazorCV::getDarkChannel(unsigned char * rgba, unsigned char * out, int width, int height)
+{
+    pthread_t pts[5];
+    int heightUnit = height >> 2;
+    GetDarkParam params[5];
+    for(int i = 0; i < 5; ++i)
+    {
+        params->rgba = rgba;
+        params->out = out;
+        params->start = width * i * heightUnit;
+        if(i == 4)
+        {
+            params->end = width * height;
+        }
+        else
+        {
+            params->end = width * (i + 1) * heightUnit;
+        }
+        int result = pthread_create(&pts[i], NULL, getDarkThread, (void *)(&params[i]));
+        if(result != 0)
+        {
+            LOG("pthread_create fail. getdark");
+        }
+    }
+    long sum = 0;
+    for(int i = 0; i < 5; ++i)
+    {
+        void * result;
+        if(0 != pthread_join(pts[i], &result))
+        {
+            sum += *((long *)result);
+            delete result;
+        }
+    }
+    return (unsigned char)(sum / width / height);
+}
+
+
+
+
 
 int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxRadius)
 {
@@ -68,18 +150,16 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
 
 
 
+    LOG("dark start");
     //求暗通道， 步骤2
-    unsigned char * darkChannel = (unsigned char *)malloc(sizeof(char) * LEN);
-    long long darkSum = 0;
-    for(int i = 0, j = 0; j < LEN; i+=4, ++j)
-    {
-        darkChannel[j] = MINT(rgba[i], rgba[i+1],rgba[i+2]);
-        darkSum += darkChannel[j];
-    }
+    unsigned char * darkChannel = (unsigned char*)malloc(sizeof(unsigned char) * LEN);
+    unsigned char darkmean = getDarkChannel(rgba, darkChannel, width, height);
     Mat darkChanMat(height, width, CV_8UC1, darkChannel);
+    LOG("dark end");
+
 
     //步骤4
-    float pmav = mP * (darkSum / LEN / 255.0f);  //p * mav;
+    float pmav = mP * (darkmean / 255.0f);  //p * mav;
     if(pmav > MAX_P) pmav = MAX_P;
 
     //暗通道均值滤波   步骤3
@@ -90,6 +170,7 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
 
 
     //步骤5
+    LOG("lx start");
     unsigned char * lx = (unsigned char *)malloc(sizeof(unsigned char) * LEN);
     unsigned char * ptrmave = (unsigned char *)mave.data;
     for(int i = 0; i < LEN; ++i)
@@ -98,9 +179,11 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
         unsigned char b = darkChannel[i];
         lx[i] = a < b ? a : b;
     }
+    LOG("lx end");
 
 
     //求A   步骤6
+    LOG("a start");
     unsigned char * prt5;
     unsigned char rgbaMax = 0;
     for(int i = 0; i < height; ++i)
@@ -127,9 +210,14 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
         }
     }
     mAir = (unsigned char)((maveMax + rgbaMax) / 2);
+    LOG("a end");
+    LOG("table start");
     InitResultTable();
+    LOG("table end");
+
 
     //计算输出
+    LOG("result start");
     int index,value, lxi;
     for (int i = 0; i < height; ++i)
     {
@@ -153,8 +241,12 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
             rgba[index] = mResultTable[value ];
         }
     }
+    LOG("result end");
+
     return 0;
 }
+
+
 
 void FastDehazorCV::BoxDivN(int *out, int width, int height, int r)
 {

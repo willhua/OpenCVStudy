@@ -11,6 +11,15 @@
 
 #define LOG(...) __android_log_print(ANDROID_LOG_DEBUG, "lyhopencvn", __VA_ARGS__)
 
+JavaVM *gVM;
+
+jint JNI_OnLoad(JavaVM* vm, void * reserverd)
+{
+    LOG("JNI_Onload Dehazor.h");
+    gVM = vm;
+    return JNI_VERSION_1_4;
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif

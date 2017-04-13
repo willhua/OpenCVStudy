@@ -52,9 +52,9 @@ public class MainActivity extends Activity {
     Button mBtnStart;
 
     String mDirectory = Environment.getExternalStorageDirectory().getPath() + "/去雾结果图";
-    //String mBitmapFile = "1920-1080大山" + ".jpg";
+    String mBitmapFile = "1920-1080大山" + ".jpg";
     //String mBitmapFile = "1920-1080登山" + ".jpg";
-    String mBitmapFile = "1920-1080田野" + ".jpg";
+    //String mBitmapFile = "1920-1080田野" + ".jpg";
     //String mBitmapFile = "1920-1080田野" + ".jpg";
     //String mBitmapFile = "1920-1080森林" + ".jpg";
     //String mBitmapFile = "4288-2848" + ".jpg";
