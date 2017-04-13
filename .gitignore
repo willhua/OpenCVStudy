@@ -13,3 +13,7 @@
 *.o
 *.a
 *.o.d
+src/main/jni/MyJni.cpp
+src/main/jni/MyJni.h
+src/main/libs/
+src/main/obj/

@@ -70,7 +70,8 @@ typedef struct GetDarkParam
 void * FastDehazorCV::getDarkThread(void * args)
 {
     JNIEnv* env = NULL;
-    long sum = 0;
+    long sum1 = 0;
+    long sum2 = 0;
     LOG("gvm %d", JniEnvInit::gVM);
     if(0 == JniEnvInit::gVM->AttachCurrentThread(&env, NULL))
     {
@@ -79,19 +80,22 @@ void * FastDehazorCV::getDarkThread(void * args)
         unsigned char * out = param->out;
         unsigned char * rgba = param->rgba;
         unsigned char dark1;
-        //unsigned char dark2;
+        unsigned char dark2;
         LOG("getDarkThread rgba%d, out%d, start%d, end%d", rgba, out, param->start, end);
-        for(int i = param->start, j = (i << 2) - 1; i < end; ++i, ++j)
+        for(int i = param->start, j = (i << 2); i < end; i+=2, j+=8)
         {
-            dark1 = MINT(rgba[++j], rgba[++j], rgba[++j]);
+            dark1 = MINT(rgba[j], rgba[1+j], rgba[2+j]);
+            dark1 = MINT(rgba[j+4], rgba[5+j], rgba[6+j]);
             //++j;
             //dark2 = MINT(rgba[++j], rgba[++j], rgba[++j]);
-            sum += dark;
-            out[i] = dark;
+            sum1 += dark1;
+            sum2 += dark2;
+            out[i] = dark1;
+            out[i+1] = dark2;
         }
         JniEnvInit::gVM->DetachCurrentThread();
     }
-    return (void *)sum;
+    return (void *)(sum1+sum2);
 }
 
 
