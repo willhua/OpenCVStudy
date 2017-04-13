@@ -1,11 +1,14 @@
 package com.willhua.opencvstudy;
 
 import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Environment;
+import android.Manifest.permission;
+import android.provider.ContactsContract;
 import android.renderscript.Allocation;
 import android.renderscript.RenderScript;
 import android.util.Log;
@@ -49,9 +52,11 @@ public class MainActivity extends Activity {
     Button mBtnStart;
 
     String mDirectory = Environment.getExternalStorageDirectory().getPath() + "/去雾结果图";
+    //String mBitmapFile = "1920-1080大山" + ".jpg";
+    //String mBitmapFile = "1920-1080登山" + ".jpg";
     String mBitmapFile = "1920-1080田野" + ".jpg";
+    //String mBitmapFile = "1920-1080田野" + ".jpg";
     //String mBitmapFile = "1920-1080森林" + ".jpg";
-    //String mBitmapFile = "haze" + ".jpg";
     //String mBitmapFile = "4288-2848" + ".jpg";
 
 
@@ -81,12 +86,13 @@ public class MainActivity extends Activity {
             Bitmap bitmap1 = BitmapFactory.decodeStream(fis);
             setBeforeImage(bitmap1);
             Log.d(TAG, "dehazor start");
-            OpenCVMethod.dehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
+            //OpenCVMethod.dehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
             //OpenCVMethod.fastDehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
-            Log.d(TAG, "dehazor start  2");
-            //OpenCVMethod.fastDehazorCV(bitmap, bitmap.getWidth(), bitmap.getHeight(), 100);
+            //Log.d(TAG, "dehazor start  2");
+            OpenCVMethod.fastDehazorCV(bitmap, bitmap.getWidth(), bitmap.getHeight(), 100);
             Log.d(TAG, "dehazor  end " + bitmap.getWidth() + " *" + bitmap.getHeight());
             setAfterImage(bitmap);
+            writeBitmapToFile(bitmap, "fastdehazorcv_air");
             fis.close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -191,9 +197,6 @@ public class MainActivity extends Activity {
     }
 
 
-
-
-
     native void floatTest();
 
     static {
@@ -201,31 +204,50 @@ public class MainActivity extends Activity {
     }
 
 
-    void fileCheck(){
+    void fileCheck() {
+        String[] permissions = new String[]{permission.WRITE_EXTERNAL_STORAGE, permission.READ_PHONE_STATE};
+        boolean result = true;
+        for (String p : permissions) {
+            if (PackageManager.PERMISSION_GRANTED != checkSelfPermission(p)) {
+                result = false;
+                break;
+            }
+        }
+        if (!result) {
+            requestPermissions(new String[]{permission.WRITE_EXTERNAL_STORAGE}, 1);
+        }
+
         File file = new File(mDirectory);
-        if(!file.exists()){
+        if (!file.exists()) {
             try {
-                file.createNewFile();
-            } catch (IOException e) {
+                boolean r = file.mkdirs();
+                Log.d(TAG, "mkdir   " + r);
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+
     }
 
-    void writeBitmapToFile(final Bitmap bitmap, final String name){
+    void writeBitmapToFile(final Bitmap bitmap, final String name) {
         new Thread(new Runnable() {
             @Override
             public void run() {
                 boolean result = false;
                 final File file = new File(mDirectory + "/" + System.currentTimeMillis() + "_" + name + ".jpg");
-                if(bitmap != null){
+                Log.d(TAG, "file " + file);
+                if (bitmap != null) {
                     try {
+                        if (!file.exists()) {
+                            file.createNewFile();
+                        }
                         result = bitmap.compress(Bitmap.CompressFormat.JPEG, 98, new FileOutputStream(file));
-                    } catch (FileNotFoundException e) {
+                    } catch (Exception e) {
+                        Log.d(TAG, "write fail: " + e.getMessage());
                         e.printStackTrace();
                     }
                 }
-                if(!result){
+                if (!result) {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {

@@ -9,7 +9,7 @@ using namespace cv;
 FastDehazorCV::FastDehazorCV()
 {
     mP = 1.5f;
-    mSkyThreshold = 75;
+    mSkyThreshold = 15;
     mResultTable = (unsigned char *)malloc(sizeof(unsigned char) * 256 * 256);
 }
 
@@ -35,7 +35,7 @@ void FastDehazorCV::InitResultTable()
     int index = 0;
     float result;
     int threshold = mAir - mSkyThreshold;
-    for(int i = 0; i < 256; ++i) //符合暗通道的区域
+    for(int i = 0; i < threshold; ++i) //符合暗通道的区域
     {
         for(int j = 0; j < 256; ++j)
         {
@@ -43,18 +43,16 @@ void FastDehazorCV::InitResultTable()
             mResultTable[index++] = (unsigned char)CLAM(result);
         }
     }
-  /*  for (int i = threshold; i < 256; ++i) {//天空区域，需要增大透射率
+    for (int i = threshold; i < 256; ++i) {//天空区域，需要增大透射率
         for(int j = 0; j < 256; ++j)
         {
-            float tmp = (float)mSkyThreshold / ABS(mAir - i);
-            int tmp2 = (int)(tmp * (j - mAir));
-            int nj = MAX(tmp2, 0) + mAir;
-            nj = MAX(nj, 0);
-            LOG("inittable    tmp %.4f  tmp2 %d     old %d   new  %d", tmp, tmp2, j, nj);
-            result = (i - nj) / (1 - nj * air);
+            float scale = ABS(mAir - j) / (float)75;
+            int newlx = MIN(mAir, scale * j);
+            result = (i - newlx) / (1 - newlx * air);
+            LOG("inittable       old %d   new  %d", j, newlx);
             mResultTable[index++] = (unsigned char)CLAM(result);
         }
-    }  */
+    }
 }
 
 int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxRadius)
