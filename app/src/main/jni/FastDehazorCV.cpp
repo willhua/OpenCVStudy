@@ -6,15 +6,11 @@
 
 using namespace cv;
 
-FastDehazorCV::FastDehazorCV(int width, int height)
+FastDehazorCV::FastDehazorCV()
 {
-    mP = 2.0f;
+    mP = 1.5f;
+    mSkyThreshold = 75;
     mResultTable = (unsigned char *)malloc(sizeof(unsigned char) * 256 * 256);
-    //InitResultTable();
-    mUpper = 0.9f;
- /*   mDivN = (int *)malloc(sizeof(int) * width * height);
-    mWinSize = 50;
-    BoxDivN(mDivN, width, height, mWinSize); */
 }
 
 FastDehazorCV::~FastDehazorCV()
@@ -25,12 +21,21 @@ FastDehazorCV::~FastDehazorCV()
     }
 }
 
+void FastDehazorCV::setP(float p)
+{
+    if(p < 1)
+    {
+        mP = p;
+    }
+}
+
 void FastDehazorCV::InitResultTable()
 {
     float air = 1.0f / mAir;
     int index = 0;
     float result;
-    for(int i = 0; i < 256; ++i)
+    int threshold = mAir - mSkyThreshold;
+    for(int i = 0; i < 256; ++i) //符合暗通道的区域
     {
         for(int j = 0; j < 256; ++j)
         {
@@ -38,6 +43,18 @@ void FastDehazorCV::InitResultTable()
             mResultTable[index++] = (unsigned char)CLAM(result);
         }
     }
+  /*  for (int i = threshold; i < 256; ++i) {//天空区域，需要增大透射率
+        for(int j = 0; j < 256; ++j)
+        {
+            float tmp = (float)mSkyThreshold / ABS(mAir - i);
+            int tmp2 = (int)(tmp * (j - mAir));
+            int nj = MAX(tmp2, 0) + mAir;
+            nj = MAX(nj, 0);
+            LOG("inittable    tmp %.4f  tmp2 %d     old %d   new  %d", tmp, tmp2, j, nj);
+            result = (i - nj) / (1 - nj * air);
+            mResultTable[index++] = (unsigned char)CLAM(result);
+        }
+    }  */
 }
 
 int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxRadius)
@@ -65,12 +82,10 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
 
     //步骤4
     float pmav = mP * (darkSum / LEN / 255.0f);  //p * mav;
-    if(pmav > 0.9f) pmav = 0.9f;
+    if(pmav > MAX_P) pmav = MAX_P;
 
     //暗通道均值滤波   步骤3
-    //int * mave = (int *)malloc(sizeof(int) * LEN);
     LOG("mean start");
-    //MeanFilter(darkChannel, mave, mWinSize, width, height);
     cv::Mat mave(height, width, CV_8UC1, darkChannel);
     cv::blur(darkChanMat, mave, cv::Size(WIN_SIZE, WIN_SIZE));
     LOG("mean end");
@@ -85,8 +100,6 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
         unsigned char b = darkChannel[i];
         lx[i] = a < b ? a : b;
     }
-    //cv::Mat lximg(height, width, CV_8UC1, lx);
-    //cv::imwrite("lx.jpg", lximg);
 
 
     //求A   步骤6
@@ -145,119 +158,6 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
     return 0;
 }
 
-
-void FastDehazorCV::MeanFilter(unsigned char *data, int * outdata, int r, int width, int height) {
-    //LOG("MeanFilter  beging");
-    float *cum = (float *) malloc(sizeof(float) * width * height);
-    if (!cum) {
-        //LOG("BoxFilter malloc failed!!!!!!");
-        return;
-    }
-    /**********this  ringht this*************/
-
-    const int len = width * height;
-    const int block = 4; //
-
-    //cum y
-    for (int i = 0; i < width; ++i) {//the first row
-        cum[i] = data[i];
-    }
-    for (int i = width; i < len; i += width) {
-        int end = i + width / block * block;
-        for (int j = i; j < end; j += block) {
-            cum[j] = cum[j - width] + data[j];
-            cum[j + 1] = cum[j - width + 1] + data[j + 1];
-            cum[j + 2] = cum[j - width + 2] + data[j + 2];
-            cum[j + 3] = cum[j - width + 3] + data[j + 3];
-        }
-        for (int j = end; j < i + width; ++j) {
-            cum[j] = cum[j - width] + data[j];
-        }
-    }
-    //diff y
-    const int R_WIDTH = r * width;
-    const int R1_WIDTH = width * (r + 1);
-    for (int i = 0 ; i < (r + 1) * width; i += block)  //不用担心end是不是block的整数倍，就算不是，超过的部分也会在后面重新计算正确
-    {
-        outdata[i] = cum[R_WIDTH+i];
-        outdata[i + 1] = cum[R_WIDTH+i + 1];
-        outdata[i + 2] = cum[R_WIDTH+i + 2];
-        outdata[i + 3] = cum[R_WIDTH+i + 3];
-    }
-    for (int i = (r + 1) * width; i < (height - r - 1) * width; i += block) {
-        outdata[i] = cum[i + R_WIDTH] - cum[i - R1_WIDTH];
-        outdata[i + 1] = cum[i + R_WIDTH + 1] - cum[i - R1_WIDTH + 1];
-        outdata[i + 2] = cum[i + R_WIDTH + 2] - cum[i - R1_WIDTH + 2];
-        outdata[i + 3] = cum[i + R_WIDTH + 3] - cum[i - R1_WIDTH + 3];
-    }
-    for (int i = height - r - 1; i < height; ++i) {
-        int end = width / block * block;
-        int outIndex = i * width;
-        int topIndex = outIndex - R1_WIDTH;
-        int bottomIndex = (height - 1) * width;
-        for (int y = 0; y < end; y += block) {
-            outdata[outIndex] = cum[bottomIndex] - cum[topIndex];
-            outdata[outIndex + 1] = cum[bottomIndex + 1] - cum[topIndex + 1];
-            outdata[outIndex + 2] = cum[bottomIndex + 2] - cum[topIndex + 2];
-            outdata[outIndex + 3] = cum[bottomIndex + 3] - cum[topIndex + 3];
-            outIndex += block;
-            topIndex += block;
-            bottomIndex += block;
-        }
-        for (int y = end; y < width; ++y) {
-            outdata[outIndex++] = cum[bottomIndex++] - cum[topIndex++];
-        }
-    }
-
-
-    //cum x
-    for (int y = 0; y < width * height; y += width) {
-        cum[y] = outdata[y];  //处理第一列
-    }
-    for (int y = 0; y < height / 4 * 4; y += 4) {
-        //y01234都是每行的行首
-        int y0 = y * width, y1 = (y + 1) * width, y2 = (y + 2) * width, y3 = (y + 3) * width, y4 =
-                (y + 4) * width;
-        //循环展开，每次处理四行，且每次从第二个元素开始，因为第一列已经处理过了
-        for (int i = y0 + 1; i < y1; ++i) {  //处理第一行
-            cum[i] = outdata[i] + cum[i - 1];
-        }
-        for (int i = y1 + 1; i < y2; ++i) {
-            cum[i] = outdata[i] + cum[i - 1];
-        }
-        for (int i = y2 + 1; i < y3; ++i) {
-            cum[i] = outdata[i] + cum[i - 1];
-        }
-        for (int i = y3 + 1; i < y4; ++i) {
-            cum[i] = outdata[i] + cum[i - 1];
-        }
-    }
-    for (int y = height / 4 * 4; y < height; ++y) {  //处理循环展开后的剩余行
-        for (int i = y * width + 1; i < (y+1)*width; ++i) {
-            cum[i] = outdata[i] + cum[i - 1];
-        }
-    }
-    //diff x
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < r + 1; ++x) {
-            outdata[y * width + x] = cum[y * width + x + r] / mDivN[y * width + x];
-        }
-        for (int x = r + 1; x < width - r; ++x) {
-            outdata[y * width + x] =
-                    (cum[y * width + x + r] - cum[y * width + x - r - 1]) /mDivN[y * width + x];
-        }
-        for (int x = width - r; x < width; ++x) {
-            outdata[y * width + x] = (cum[y * width + width - 1] - cum[y * width + x - r - 1]) /
-                                     mDivN[y * width + x];
-        }
-    }
-
-    delete [] cum;
-    cum = NULL;
-    //LOG("MeanFilter  end");
-}
-
-
 void FastDehazorCV::BoxDivN(int *out, int width, int height, int r)
 {
     int m, n, max;
@@ -275,13 +175,22 @@ void FastDehazorCV::BoxDivN(int *out, int width, int height, int r)
         }
     }
 
-    /*   备用  正确
+  /*    // 备用  正确
     int * input = (int *)malloc(sizeof(int)*width * height);
+    int * out2 = (int *)malloc(sizeof(int)*width * height);
     for (int i = 0; i < width * height; ++i)
     {
         input[i] = 1;
     }
-    BoxFilter(input, out,r,width,height, 1);   */
+    BoxFilter(input, out2,r,width,height, 1);
+    for(int i = 0; i < width * height; ++i)
+    {
+        if(out[i] != out2[i])
+        {
+            LOG("wrong   not equal");
+        }
+    }
+    LOG("    equal");  */
 }
 
 
