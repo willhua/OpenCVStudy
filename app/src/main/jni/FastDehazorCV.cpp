@@ -71,22 +71,26 @@ void * FastDehazorCV::getDarkThread(void * args)
 {
     JNIEnv* env = NULL;
     long sum = 0;
+    LOG("gvm %d", JniEnvInit::gVM);
     if(0 == JniEnvInit::gVM->AttachCurrentThread(&env, NULL))
     {
         GetDarkParam * param = (GetDarkParam *)args;
         int end  = param->end;
         unsigned char * out = param->out;
         unsigned char * rgba = param->rgba;
-        unsigned char dark;
+        unsigned char dark1;
+        //unsigned char dark2;
+        LOG("getDarkThread rgba%d, out%d, start%d, end%d", rgba, out, param->start, end);
         for(int i = param->start, j = (i << 2) - 1; i < end; ++i, ++j)
         {
-            dark = MINT(rgba[++j], rgba[++j], rgba[++j]);
+            dark1 = MINT(rgba[++j], rgba[++j], rgba[++j]);
+            //++j;
+            //dark2 = MINT(rgba[++j], rgba[++j], rgba[++j]);
             sum += dark;
             out[i] = dark;
         }
         JniEnvInit::gVM->DetachCurrentThread();
     }
-    LOG("sum   %d", sum);
     return (void *)sum;
 }
 
@@ -95,15 +99,16 @@ void * FastDehazorCV::getDarkThread(void * args)
 
 unsigned char FastDehazorCV::getDarkChannel(unsigned char * rgba, unsigned char * out, int width, int height)
 {
-    pthread_t pts[5];
+    const int cnt = 5;
+    pthread_t pts[cnt];
     int heightUnit = height >> 2;
-    GetDarkParam params[5];
-    for(int i = 0; i < 5; ++i)
+    GetDarkParam params[cnt];
+    for(int i = 0; i < cnt; ++i)
     {
         params[i].rgba = rgba;
         params[i].out = out;
         params[i].start = width * i * heightUnit;
-        if(i == 4)
+        if(i == cnt - 1)
         {
             params[i].end = width * height;
         }
@@ -118,13 +123,12 @@ unsigned char FastDehazorCV::getDarkChannel(unsigned char * rgba, unsigned char 
         }
     }
     long sum = 0;
-    for(int i = 0; i < 5; ++i)
+    for(int i = 0; i < cnt; ++i)
     {
         void * result;
         if(0 == pthread_join(pts[i], &result))
         {
             sum += (long *)result;
-            LOG("result   %d", result);
         }
         else
         {
@@ -244,6 +248,9 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
     }
     LOG("result end");
 
+    delete [] mResultTable;
+    delete [] lx;
+    delete [] darkChannel;
     return 0;
 }
 
