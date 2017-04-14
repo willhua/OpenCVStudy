@@ -24,7 +24,7 @@ public:
 protected:
 private:
     static void * getDarkThread(void * args);
-    unsigned char getDarkChannel(unsigned char * rgba, unsigned char * out, int width, int height);
+    unsigned char getDarkChannel(unsigned char * rgba, unsigned char * out, int width, int height, unsigned char &max);
 
     int * mDivN;
     float mP;

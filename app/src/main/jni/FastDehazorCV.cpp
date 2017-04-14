@@ -67,41 +67,99 @@ typedef struct GetDarkParam
 };
 
 
+
+
+inline void findMaxMin(unsigned char a, unsigned char b, unsigned char c, unsigned char &max,
+                       unsigned char &min)
+{
+    if(a > b)
+    {
+        if(b > c)
+        {
+            if(a > max) max = a;
+            min = c;
+        }
+        else
+        {
+            min = b;
+            if(a > c && a > max)
+            {
+                max = a;
+            }
+            else if(c > max)
+            {
+                max = c;
+            }
+        }
+    }
+    else
+    {
+        if(a > c)
+        {
+            if(b > max) max = b;
+            min = c;
+        }
+        else
+        {
+            min = a;
+            if(b > c && b > max)
+            {
+                max = b;
+            }
+            else if(c > max)
+            {
+                max = c;
+            }
+        }
+    }
+}
+
+
+
+
+
 void * FastDehazorCV::getDarkThread(void * args)
 {
     JNIEnv* env = NULL;
     long sum1 = 0;
     long sum2 = 0;
-    LOG("gvm %d", JniEnvInit::gVM);
+    unsigned char max1;
+    unsigned char max2;
+    //LOG("gvm %d", JniEnvInit::gVM);
     if(0 == JniEnvInit::gVM->AttachCurrentThread(&env, NULL))
     {
         GetDarkParam * param = (GetDarkParam *)args;
         int end  = param->end;
         unsigned char * out = param->out;
         unsigned char * rgba = param->rgba;
-        unsigned char dark1;
-        unsigned char dark2;
-        LOG("getDarkThread rgba%d, out%d, start%d, end%d", rgba, out, param->start, end);
+        unsigned char min1;
+        unsigned char min2;
+        //LOG("getDarkThread rgba%d, out%d, start%d, end%d", rgba, out, param->start, end);
         for(int i = param->start, j = (i << 2); i < end; i+=2, j+=8)
         {
-            dark1 = MINT(rgba[j], rgba[1+j], rgba[2+j]);
-            dark1 = MINT(rgba[j+4], rgba[5+j], rgba[6+j]);
+            findMaxMin(rgba[j], rgba[j+1], rgba[j+2], max1, min1);
+            findMaxMin(rgba[j+4], rgba[j+5], rgba[j+5], max2, min2);
+            //dark1 = MINT(rgba[j], rgba[1+j], rgba[2+j]);
+            //dark1 = MINT(rgba[j+4], rgba[5+j], rgba[6+j]);
             //++j;
             //dark2 = MINT(rgba[++j], rgba[++j], rgba[++j]);
-            sum1 += dark1;
-            sum2 += dark2;
-            out[i] = dark1;
-            out[i+1] = dark2;
+            sum1 += min1;
+            sum2 += min2;
+            out[i] = min1;
+            out[i+1] = min2;
         }
         JniEnvInit::gVM->DetachCurrentThread();
     }
-    return (void *)(sum1+sum2);
+    long * result = (long *)malloc(sizeof(long) * 2);
+    result[0] = sum1 + sum2;
+    result[1] = MAX(max1, max2);
+    LOG("getDarkThread   sum%ld  max%ld", result[0], result[1]);
+    return (void *)(result);
 }
 
 
-
-
-unsigned char FastDehazorCV::getDarkChannel(unsigned char * rgba, unsigned char * out, int width, int height)
+unsigned char FastDehazorCV::getDarkChannel(unsigned char * rgba, unsigned char * out, int width, int height,
+                                            unsigned char &max)
 {
     const int cnt = 5;
     pthread_t pts[cnt];
@@ -127,12 +185,14 @@ unsigned char FastDehazorCV::getDarkChannel(unsigned char * rgba, unsigned char 
         }
     }
     long sum = 0;
+    max = 0;
     for(int i = 0; i < cnt; ++i)
     {
         void * result;
         if(0 == pthread_join(pts[i], &result))
         {
-            sum += (long *)result;
+            sum += ((long *)result)[0];
+            if(max < ((long *)result)[1]) max = ((long *)result)[1];
         }
         else
         {
@@ -161,8 +221,9 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
 
     LOG("dark start");
     //求暗通道， 步骤2
+    unsigned char rowMax = 0;
     unsigned char * darkChannel = (unsigned char*)malloc(sizeof(unsigned char) * LEN);
-    unsigned char darkmean = getDarkChannel(rgba, darkChannel, width, height);
+    unsigned char darkmean = getDarkChannel(rgba, darkChannel, width, height, rowMax);
     Mat darkChanMat(height, width, CV_8UC1, darkChannel);
     LOG("dark end");
 
@@ -193,9 +254,11 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
 
     //求A   步骤6
     LOG("a start");
-    unsigned char * prt5;
-    unsigned char rgbaMax = 0;
-    for(int i = 0; i < height; ++i)
+ //   unsigned char * prt5;
+ //   double rgbaMax = 0;
+ //   double rgbaMin = 0;
+  //  cv::minMaxLoc(inputMat, &rgbaMin, &rgbaMax);
+ /*   for(int i = 0; i < height; ++i)
     {
         prt5 = rgba + i * width;
         for (int j = 0; j < width; ++j)
@@ -209,8 +272,9 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
         {
             break;
         }
-    }
-    int maveMax = 0;
+    }  */
+    unsigned char maveMax = 0;
+//    cv::minMaxLoc(mave, &rgbaMin, &maveMax);
     for (int i = 0; i < LEN; ++i)
     {
         if(ptrmave[i] > maveMax)
@@ -218,7 +282,7 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
             maveMax = ptrmave[i];
         }
     }
-    mAir = (unsigned char)((maveMax + rgbaMax) / 2);
+    mAir = (unsigned char)((maveMax + rowMax) / 2);
     LOG("a end");
     LOG("table start");
     InitResultTable();
