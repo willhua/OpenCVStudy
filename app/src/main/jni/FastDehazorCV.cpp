@@ -58,7 +58,7 @@ void FastDehazorCV::InitResultTable()
 
 
 
-typedef struct GetDarkParam
+typedef struct TaskParam
 {
     unsigned char * rgba;
     unsigned char * out;
@@ -117,45 +117,37 @@ inline void findMaxMin(unsigned char a, unsigned char b, unsigned char c, unsign
 }
 
 
-
-
-
 void * FastDehazorCV::getDarkThread(void * args)
 {
-    JNIEnv* env = NULL;
     long sum1 = 0;
     long sum2 = 0;
     unsigned char max1;
     unsigned char max2;
     //LOG("gvm %d", JniEnvInit::gVM);
-    if(0 == JniEnvInit::gVM->AttachCurrentThread(&env, NULL))
+    TaskParam * param = (TaskParam *)args;
+    int end  = param->end;
+    unsigned char * out = param->out;
+    unsigned char * rgba = param->rgba;
+    unsigned char min1;
+    unsigned char min2;
+    //LOG("getDarkThread rgba%d, out%d, start%d, end%d", rgba, out, param->start, end);
+    for(int i = param->start, j = (i << 2); i < end; i+=2, j+=8)
     {
-        GetDarkParam * param = (GetDarkParam *)args;
-        int end  = param->end;
-        unsigned char * out = param->out;
-        unsigned char * rgba = param->rgba;
-        unsigned char min1;
-        unsigned char min2;
-        //LOG("getDarkThread rgba%d, out%d, start%d, end%d", rgba, out, param->start, end);
-        for(int i = param->start, j = (i << 2); i < end; i+=2, j+=8)
-        {
-            findMaxMin(rgba[j], rgba[j+1], rgba[j+2], max1, min1);
-            findMaxMin(rgba[j+4], rgba[j+5], rgba[j+5], max2, min2);
-            //dark1 = MINT(rgba[j], rgba[1+j], rgba[2+j]);
-            //dark1 = MINT(rgba[j+4], rgba[5+j], rgba[6+j]);
-            //++j;
-            //dark2 = MINT(rgba[++j], rgba[++j], rgba[++j]);
-            sum1 += min1;
-            sum2 += min2;
-            out[i] = min1;
-            out[i+1] = min2;
-        }
-        JniEnvInit::gVM->DetachCurrentThread();
+        findMaxMin(rgba[j], rgba[j+1], rgba[j+2], max1, min1);
+        findMaxMin(rgba[j+4], rgba[j+5], rgba[j+5], max2, min2);
+        //dark1 = MINT(rgba[j], rgba[1+j], rgba[2+j]);
+        //dark1 = MINT(rgba[j+4], rgba[5+j], rgba[6+j]);
+        //++j;
+        //dark2 = MINT(rgba[++j], rgba[++j], rgba[++j]);
+        sum1 += min1;
+        sum2 += min2;
+        out[i] = min1;
+        out[i+1] = min2;
     }
     long * result = (long *)malloc(sizeof(long) * 2);
     result[0] = sum1 + sum2;
     result[1] = MAX(max1, max2);
-    LOG("getDarkThread   sum%ld  max%ld", result[0], result[1]);
+    //LOG("getDarkThread   sum%ld  max%ld", result[0], result[1]);
     return (void *)(result);
 }
 
@@ -166,7 +158,7 @@ unsigned char FastDehazorCV::getDarkChannel(unsigned char * rgba, unsigned char 
     const int cnt = 5;
     pthread_t pts[cnt];
     int heightUnit = height >> 2;
-    GetDarkParam params[cnt];
+    TaskParam params[cnt];
     for(int i = 0; i < cnt; ++i)
     {
         params[i].rgba = rgba;
@@ -207,21 +199,15 @@ unsigned char FastDehazorCV::getDarkChannel(unsigned char * rgba, unsigned char 
 
 void * getLxThread(void *args)
 {
-
-    if(0 == JniEnvInit::gVM->AttachCurrentThread(NULL, NULL))
+    TaskParam * param = (TaskParam*)args;
+    unsigned char a;
+    unsigned char b;
+    //LOG("lxt %d   %d  ", param->start, param->end);
+    for(int i = param->start; i < param->end; ++i)
     {
-
-        GetDarkParam * param = (GetDarkParam*)args;
-        unsigned char a;
-        unsigned char b;
-        //LOG("lxt %d   %d  ", param->start, param->end);
-        for(int i = param->start; i < param->end; ++i)
-        {
-            a = (unsigned char)( param->p * param->rgba[i]);
-            b = param->dark[i];
-            param->out[i] = a < b ? a : b;
-        }
-        JniEnvInit::gVM->DetachCurrentThread();
+        a = (unsigned char)( param->p * param->rgba[i]);
+        b = param->dark[i];
+        param->out[i] = a < b ? a : b;
     }
     return (void *)0;
 }
@@ -231,7 +217,7 @@ void getLx(unsigned char * lx, unsigned char * mave, unsigned char * dark, float
     const int cnt = 5;
     pthread_t pts[cnt];
     int unit = len >> 2;
-    GetDarkParam params[cnt];
+    TaskParam params[cnt];
     for(int i = 0; i < cnt; ++i)
     {
         params[i].rgba = mave;
@@ -263,30 +249,25 @@ void getLx(unsigned char * lx, unsigned char * mave, unsigned char * dark, float
 
 void * getResultThread(void *args)
 {
-    if(JniEnvInit::gVM->AttachCurrentThread(NULL, NULL))
+    TaskParam *param = (TaskParam*)args;
+    unsigned char *rgba = param->rgba;
+    unsigned char *lx = param->dark;
+    unsigned char *table = param->out;
+    for(int i = param->start, index = (i << 2) - 1, value; i < param->end; ++i, ++index)
     {
-        GetDarkParam *param = (GetDarkParam*)args;
-        unsigned char *rgba = param->rgba;
-        unsigned char *lx = param->dark;
-        unsigned char *table = param->out;
-        for(int i = param->start, index = (i << 2) - 1, value; i < param->end; ++i, ++index)
-        {
-            value = rgba[++index] ;
-            value = value << 8;
-            value +=  lx[i];
-            rgba[index] = table[value ];
+        value = rgba[++index] ;
+        value = value << 8;
+        value +=  lx[i];
+        rgba[index] = table[value ];
+        value = rgba[++index] ;
+        value = value << 8;
+        value +=  lx[i];
+        rgba[index] = table[value];
 
-            value = rgba[++index] ;
-            value = value << 8;
-            value +=  lx[i];
-            rgba[index] = table[value];
-
-            value = rgba[++index] ;
-            value = value << 8;
-            value +=  lx[i];
-            rgba[index] = table[value ];
-        }
-        JniEnvInit::gVM->DetachCurrentThread();
+        value = rgba[++index] ;
+        value = value << 8;
+        value +=  lx[i];
+        rgba[index] = table[value ];
     }
     return (void *)0;
 }
@@ -296,7 +277,7 @@ void getResult(unsigned char * rgba, unsigned char * lx, unsigned char * table, 
     const int cnt = 5;
     pthread_t pts[cnt];
     int unit = len >> 2;
-    GetDarkParam params[cnt];
+    TaskParam params[cnt];
     for(int i = 0; i < cnt; ++i)
     {
         params[i].rgba = rgba;
