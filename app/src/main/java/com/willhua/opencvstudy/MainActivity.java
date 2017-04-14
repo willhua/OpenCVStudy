@@ -182,26 +182,20 @@ public class MainActivity extends Activity {
         }
 
         //the test code for rs
+        Bitmap bitmapout = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
         Log.d(TAG, "rs init");
         RenderScript renderScript = RenderScript.create(getApplication());
         ScriptC_FastDehazor scriptC_fastDehazor = new ScriptC_FastDehazor(renderScript);
-        ScriptC_GetDark scriptC_getDark = new ScriptC_GetDark(renderScript);
         Log.d(TAG, "rs init 2");
-        Allocation in = Allocation.createFromBitmap(renderScript, bitmap, Allocation.MipmapControl.MIPMAP_NONE, USAGE_SHARED | USAGE_SCRIPT);
-        Allocation out  = Allocation.createTyped(renderScript, Type.createXY(renderScript, Element.A_8(renderScript),bitmap.getWidth(), bitmap.getHeight()), USAGE_SHARED | USAGE_SCRIPT);
-        scriptC_getDark.forEach_getDarkChannel(in, out);
-        renderScript.finish();
-        byte[] dark = new byte[bitmap.getWidth() * bitmap.getHeight()];
-        out.copy2DRangeTo(0,0, bitmap.getWidth(), bitmap.getHeight(), dark);
-        Log.d(TAG, "dark" + dark[100] + dark[4] + dark[10000]);
+        Allocation in = Allocation.createFromBitmap(renderScript, bitmap, Allocation.MipmapControl.MIPMAP_NONE,  USAGE_SCRIPT);
+        Allocation out = Allocation.createFromBitmap(renderScript, bitmapout, Allocation.MipmapControl.MIPMAP_NONE,  USAGE_SCRIPT);
         Log.d(TAG, "rs start");
-        //scriptC_fastDehazor.forEach_getDarkChannel(in, out);
-        scriptC_fastDehazor.invoke_fastProcess(in, bitmap.getWidth(), bitmap.getHeight());
+        scriptC_fastDehazor.invoke_fastProcess(in, out, bitmap.getWidth(), bitmap.getHeight());
         renderScript.finish();
         Log.d(TAG, "rs end");
-        in.copyTo(bitmap);
+        out.copyTo(bitmapout);
         Log.d(TAG, "rs copy end");
-        setAfterImage(bitmap);
+        setAfterImage(bitmapout);
 
         //the test for jni
 

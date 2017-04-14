@@ -17,7 +17,7 @@ endif
 LOCAL_MODULE := OpenCV
 #LOCAL_ARM_NEON := true
 
-LOCAL_SRC_FILES := JniEnvInit.cpp OpenCVMethod.cpp  JniTest.cpp  LyhDehazor.cpp Dehazor.cpp FastDehazor.cpp FastDehazorCV.cpp
+LOCAL_SRC_FILES := JniEnvInit.cpp JniUtils.cpp OpenCVMethod.cpp  JniTest.cpp  LyhDehazor.cpp Dehazor.cpp FastDehazor.cpp FastDehazorCV.cpp
 
 LOCAL_LDLIBS +=  -lm -llog -ljnigraphics
 

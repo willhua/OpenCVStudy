@@ -1,4 +1,4 @@
 APP_STL:=gnustl_static
 APP_CPPFLAGS:= -frtti
 APP_ABI:=armeabi armeabi-v7a
-APP_PLATFORM:=android-21
+APP_PLATFORM:=android-24
