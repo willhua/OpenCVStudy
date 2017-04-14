@@ -261,6 +261,70 @@ void getLx(unsigned char * lx, unsigned char * mave, unsigned char * dark, float
     }
 }
 
+void * getResultThread(void *args)
+{
+    if(JniEnvInit::gVM->AttachCurrentThread(NULL, NULL))
+    {
+        GetDarkParam *param = (GetDarkParam*)args;
+        unsigned char *rgba = param->rgba;
+        unsigned char *lx = param->dark;
+        unsigned char *table = param->out;
+        for(int i = param->start, index = (i << 2) - 1, value; i < param->end; ++i, ++index)
+        {
+            value = rgba[++index] ;
+            value = value << 8;
+            value +=  lx[i];
+            rgba[index] = table[value ];
+
+            value = rgba[++index] ;
+            value = value << 8;
+            value +=  lx[i];
+            rgba[index] = table[value];
+
+            value = rgba[++index] ;
+            value = value << 8;
+            value +=  lx[i];
+            rgba[index] = table[value ];
+        }
+        JniEnvInit::gVM->DetachCurrentThread();
+    }
+    return (void *)0;
+}
+
+void getResult(unsigned char * rgba, unsigned char * lx, unsigned char * table, int len)
+{
+    const int cnt = 5;
+    pthread_t pts[cnt];
+    int unit = len >> 2;
+    GetDarkParam params[cnt];
+    for(int i = 0; i < cnt; ++i)
+    {
+        params[i].rgba = rgba;
+        params[i].dark = lx;
+        params[i].out = table;
+        params[i].start = unit * i;
+        if(i == cnt - 1)
+        {
+            params[i].end = len;
+        }
+        else
+        {
+            params[i].end = (i + 1) * unit;
+        }
+        if(pthread_create(&pts[i], NULL, getResultThread, (void *)(&params[i])) != 0)
+        {
+            LOG("getResult create fail");
+        }
+    }
+    for(int i = 0; i < cnt; ++i)
+    {
+        if(pthread_join(pts[i], NULL) != 0)
+        {
+            LOG("getResult join fail");
+        }
+    }
+}
+
 
 
 int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxRadius)
@@ -301,38 +365,12 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
     unsigned char * lx = (unsigned char *)malloc(sizeof(unsigned char) * LEN);
     unsigned char * ptrmave = (unsigned char *)mave.data;
     getLx(lx, ptrmave, darkChannel,pmav, LEN);
-/*    for(int i = 0; i < LEN; ++i)
-    {
-        unsigned char a = (unsigned char)(gPmav * ptrmave[i]);
-        unsigned char b = darkChannel[i];
-        lx[i] = a < b ? a : b;
-    }*/
     LOG("lx end");
 
 
     //求A   步骤6
     LOG("a start");
- //   unsigned char * prt5;
- //   double rgbaMax = 0;
- //   double rgbaMin = 0;
-  //  cv::minMaxLoc(inputMat, &rgbaMin, &rgbaMax);
- /*   for(int i = 0; i < height; ++i)
-    {
-        prt5 = rgba + i * width;
-        for (int j = 0; j < width; ++j)
-        {
-            if(prt5[0] > rgbaMax) rgbaMax = prt5[0];
-            if(prt5[1] > rgbaMax) rgbaMax = prt5[1];
-            if(prt5[2] > rgbaMax) rgbaMax = prt5[2];
-            prt5 += 4;
-        }
-        if(rgbaMax == 255)
-        {
-            break;
-        }
-    }  */
     unsigned char maveMax = 0;
-//    cv::minMaxLoc(mave, &rgbaMin, &maveMax);
     for (int i = 0; i < LEN; ++i)
     {
         if(ptrmave[i] > maveMax)
@@ -349,29 +387,7 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
 
     //计算输出
     LOG("result start");
-    int index,value, lxi;
-    for (int i = 0; i < height; ++i)
-    {
-        index = i * width * 4 - 1;
-        lxi = i*width;
-        for (int j = 0; j < width; ++j, ++index, ++lxi)
-        {
-            value = rgba[++index] ;
-            value = value << 8;
-            value +=  lx[lxi];
-            rgba[index] = mResultTable[value ];
-
-            value = rgba[++index] ;
-            value = value << 8;
-            value +=  lx[lxi];
-            rgba[index] = mResultTable[value];
-
-            value = rgba[++index] ;
-            value = value << 8;
-            value +=  lx[lxi];
-            rgba[index] = mResultTable[value ];
-        }
-    }
+    getResult(rgba, lx, mResultTable, LEN);
     LOG("result end");
 
     delete [] mResultTable;
