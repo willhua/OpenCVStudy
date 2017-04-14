@@ -64,6 +64,8 @@ typedef struct GetDarkParam
     unsigned char * out;
     int start;  //以像素为单位的，即对于out可以直接使用，但是对于rgba则需要乘以4
     int end;
+    unsigned char * dark;
+    float p;
 };
 
 
@@ -203,9 +205,61 @@ unsigned char FastDehazorCV::getDarkChannel(unsigned char * rgba, unsigned char 
     return (unsigned char)(sum / width / height);
 }
 
+void * getLxThread(void *args)
+{
 
+    if(0 == JniEnvInit::gVM->AttachCurrentThread(NULL, NULL))
+    {
 
+        GetDarkParam * param = (GetDarkParam*)args;
+        unsigned char a;
+        unsigned char b;
+        //LOG("lxt %d   %d  ", param->start, param->end);
+        for(int i = param->start; i < param->end; ++i)
+        {
+            a = (unsigned char)( param->p * param->rgba[i]);
+            b = param->dark[i];
+            param->out[i] = a < b ? a : b;
+        }
+        JniEnvInit::gVM->DetachCurrentThread();
+    }
+    return (void *)0;
+}
 
+void getLx(unsigned char * lx, unsigned char * mave, unsigned char * dark, float p, int len)
+{
+    const int cnt = 5;
+    pthread_t pts[cnt];
+    int unit = len >> 2;
+    GetDarkParam params[cnt];
+    for(int i = 0; i < cnt; ++i)
+    {
+        params[i].rgba = mave;
+        params[i].out = lx;
+        params[i].start = unit * i;
+        params[i].dark = dark;
+        params[i].p = p;
+        if(i == cnt - 1)
+        {
+            params[i].end = len;
+        }
+        else
+        {
+            params[i].end = ( i + 1 ) * unit;
+        }
+        if(pthread_create(&pts[i], NULL, getLxThread, (void *)(&params[i])) != 0)
+        {
+            LOG("getLx create fail");
+        }
+    }
+    for(int i = 0; i < cnt; ++i)
+    {
+        if(pthread_join(pts[i], NULL) != 0)
+        {
+            LOG("getLx join fail");
+        }
+    }
+}
 
 
 
@@ -246,12 +300,13 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
     LOG("lx start");
     unsigned char * lx = (unsigned char *)malloc(sizeof(unsigned char) * LEN);
     unsigned char * ptrmave = (unsigned char *)mave.data;
-    for(int i = 0; i < LEN; ++i)
+    getLx(lx, ptrmave, darkChannel,pmav, LEN);
+/*    for(int i = 0; i < LEN; ++i)
     {
-        unsigned char a = (unsigned char)(pmav * ptrmave[i]);
+        unsigned char a = (unsigned char)(gPmav * ptrmave[i]);
         unsigned char b = darkChannel[i];
         lx[i] = a < b ? a : b;
-    }
+    }*/
     LOG("lx end");
 
 
