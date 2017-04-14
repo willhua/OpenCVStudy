@@ -193,6 +193,7 @@ unsigned char FastDehazorCV::getDarkChannel(unsigned char * rgba, unsigned char 
         {
             sum += ((long *)result)[0];
             if(max < ((long *)result)[1]) max = ((long *)result)[1];
+            delete [] ((long *)result);
         }
         else
         {
@@ -201,6 +202,8 @@ unsigned char FastDehazorCV::getDarkChannel(unsigned char * rgba, unsigned char 
     }
     return (unsigned char)(sum / width / height);
 }
+
+
 
 
 
