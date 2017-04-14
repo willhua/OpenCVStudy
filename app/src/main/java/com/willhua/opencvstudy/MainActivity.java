@@ -10,7 +10,9 @@ import android.os.Environment;
 import android.Manifest.permission;
 import android.provider.ContactsContract;
 import android.renderscript.Allocation;
+import android.renderscript.Element;
 import android.renderscript.RenderScript;
+import android.renderscript.Type;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -19,6 +21,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.willhua.opencvstudy.rs.ScriptC_FastDehazor;
+import com.willhua.opencvstudy.rs.ScriptC_GetDark;
 import com.willhua.opencvstudy.rs.ScriptC_Rgb2Yuv;
 
 import java.io.File;
@@ -26,10 +29,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.ElementType;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
+import static android.renderscript.Allocation.USAGE_SCRIPT;
 import static android.renderscript.Allocation.USAGE_SHARED;
 
 
@@ -70,8 +75,8 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 //rgb2yuv();
-                //fastDehazorRsTest();
-                nativeAlgorithmTest();
+                fastDehazorRsTest();
+               // nativeAlgorithmTest();
             }
         }).start();
     }
@@ -180,8 +185,15 @@ public class MainActivity extends Activity {
         Log.d(TAG, "rs init");
         RenderScript renderScript = RenderScript.create(getApplication());
         ScriptC_FastDehazor scriptC_fastDehazor = new ScriptC_FastDehazor(renderScript);
+        ScriptC_GetDark scriptC_getDark = new ScriptC_GetDark(renderScript);
         Log.d(TAG, "rs init 2");
-        Allocation in = Allocation.createFromBitmap(renderScript, bitmap, Allocation.MipmapControl.MIPMAP_NONE, USAGE_SHARED);
+        Allocation in = Allocation.createFromBitmap(renderScript, bitmap, Allocation.MipmapControl.MIPMAP_NONE, USAGE_SHARED | USAGE_SCRIPT);
+        Allocation out  = Allocation.createTyped(renderScript, Type.createXY(renderScript, Element.A_8(renderScript),bitmap.getWidth(), bitmap.getHeight()), USAGE_SHARED | USAGE_SCRIPT);
+        scriptC_getDark.forEach_getDarkChannel(in, out);
+        renderScript.finish();
+        byte[] dark = new byte[bitmap.getWidth() * bitmap.getHeight()];
+        out.copy2DRangeTo(0,0, bitmap.getWidth(), bitmap.getHeight(), dark);
+        Log.d(TAG, "dark" + dark[100] + dark[4] + dark[10000]);
         Log.d(TAG, "rs start");
         //scriptC_fastDehazor.forEach_getDarkChannel(in, out);
         scriptC_fastDehazor.invoke_fastProcess(in, bitmap.getWidth(), bitmap.getHeight());
