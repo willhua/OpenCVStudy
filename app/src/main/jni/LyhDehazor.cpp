@@ -41,7 +41,7 @@ LyhDehazor::MinFilter(unsigned char *data, int width, int height, int boxWidth, 
     for (int x = 0; x < width; ++x) {
         int left = MAX(0, x - boxWidth), right = MIN(x + boxWidth, width);
         for (int y = 0; y < height; ++y) {
-            //若是第一次计算minForRow，那么minforrow中的值应该为0，即uchar可能的最小值，如果if成立，那么该行的最小值即为最后一个，为0
+            //若是第一次计算minForRow，那么minforrow中的值应该为0，即UCHAR可能的最小值，如果if成立，那么该行的最小值即为最后一个，为0
             //若minforrow已经经历过一次计算，那么minforrow中含有的是[left - 1, right -2)中的最小值，现在我们要求的是[left,right - 1),
             //那么，如果if成立，data则是整个[left - 1, right -1)中的最小值，自然也是我们要求的最小值
             //如果已经到了末端，那么也没关系，if一直会为false
@@ -107,7 +107,7 @@ void LyhDehazor::GetTrans(float *data, int width, int height, int boxsize, float
     for (int x = 0; x < width; ++x) {
         int left = MAX(0, x - boxsize), right = MIN(x + boxsize, width);
         for (int y = 0; y < height; ++y) {  //这个for循环计算得到了left-right的宽度范围内的，所有行的最小值
-            //若是第一次计算minForRow，那么minforrow中的值应该为0，即uchar可能的最小值，如果if成立，那么该行的最小值即为最后一个，为0
+            //若是第一次计算minForRow，那么minforrow中的值应该为0，即UCHAR可能的最小值，如果if成立，那么该行的最小值即为最后一个，为0
             //若minforrow已经经历过一次计算，那么minforrow中含有的是[left - 1, right -2)中的最小值，现在我们要求的是[left,right - 1),
             //那么，如果if成立，data则是整个[left - 1, right -1)中的最小值，自然也是我们要求的最小值
             //如果已经到了末端，那么也没关系，if一直会为false
@@ -165,35 +165,112 @@ float LyhDehazor::MinLine(float *data, int width, int line, int left, int right)
     return min;
 }
 
+
+
+
+void getGrayImage(UCHAR * rgba, UCHAR * gray, int len)
+{
+    LOG("to gray start");
+    for(int i = 0, j = 0; j < len ; i+=4,++j)
+    {
+        gray[j] = (UCHAR)((rgba[i] * 1224 + rgba[i+1]*2404 + rgba[i+2]*467)>>12);
+    }
+    LOG("to gray end");
+}
+
+
+
+
+typedef struct ThreadParam{
+    UCHAR * rgba;
+    UCHAR * r;
+    UCHAR * g;
+    UCHAR *b;
+    UCHAR *dark;
+    UCHAR *gray;
+    int start;
+    int end;
+};
+
+
+//TODO: 这里应该用查表法优化
+void *darkGrayThread(void *args)
+{
+    ThreadParam *param = (ThreadParam *)args;
+    for(int i = param->start, j = i * 4; i < param->end; ++i, j+=4)
+    {
+        param->r[i] = param->rgba[j];
+        param->g[i] = param->rgba[j + 1];
+        param->b[i] = param->rgba[j + 2];
+        param->dark[i] = MINT(param->rgba[j], param->rgba[j + 1], param->rgba[j + 2]);
+        param->gray[i] = (UCHAR)((param->rgba[j] * 1224 + param->rgba[j + 1] * 2404 +param->rgba[j + 2] * 467) >> 12);
+    }
+}
+
+/**
+ * 分别得到rgb三个通道； 得到暗通道； 得到灰度图
+ * @param rgba
+ * @param r
+ * @param g
+ * @param b
+ * @param dark
+ * @param gray
+ * @param w
+ * @param h
+ */
+void darkGray(UCHAR * rgba, UCHAR * r, UCHAR * g, UCHAR *b, UCHAR *dark, UCHAR *gray, int w, int h)
+{
+    const int cnt = 5;
+    pthread_t pts[cnt];
+    ThreadParam params[cnt];
+    int unit = h >> 2;
+    for(int i = 0; i < cnt; ++i)
+    {
+        params[i].start = i * w;
+        params[i].rgba = rgba;
+        params[i].r = r;
+        params[i].g = g;
+        params[i].b = b;
+        params[i].dark = dark;
+        params[i].gray = gray;
+        if(i == cnt - 1)
+        {
+            params[i].end = w * h;
+        }
+        else
+        {
+            params[i].end = w * (i + 1);
+        }
+        if(0 != pthread_create(&pts[i], NULL, darkGrayThread, (void *)(&params[i])))
+        {
+            LOG("ERROE  create darkGray %d", i);
+        }
+    }
+    for(int i = 0; i < cnt; ++i)
+    {
+        if(pthread_join(pts[i], NULL) != 0)
+        {
+            LOG("ERROE  JOIN darkGray %d", i);
+        }
+    }
+}
+
 void LyhDehazor::Dehazor(unsigned char *imageDataRGBA, int width, int height) {
     const int LEN = width * height;
     unsigned char *oriR = (unsigned char *) malloc(sizeof(unsigned char) * LEN);  //原图像的r通道
     unsigned char *oriG = (unsigned char *) malloc(sizeof(unsigned char) * LEN);   //g
     unsigned char *oriB = (unsigned char *) malloc(sizeof(unsigned char) * LEN);
     unsigned char *oriDark = (unsigned char *) malloc(sizeof(unsigned char) * LEN);  //原图像的暗通道
+    unsigned char *oriGray = (unsigned char *) malloc(sizeof(unsigned char) * LEN);  //原图像的暗通道
     unsigned char *Air = (unsigned char *) malloc(sizeof(unsigned char) * 3);
     LOG("he   dehazor start");
-    unsigned char low = 255, heigh = 0;
-    for (int i = 0, j = 0; i < 4 * LEN; ++j, i += 4) //因为是rgba
-    {
-        oriR[j] = imageDataRGBA[i];
-        oriG[j] = imageDataRGBA[i + 1];
-        oriB[j] = imageDataRGBA[i + 2];
-        oriDark[j] = MINT(imageDataRGBA[i], imageDataRGBA[i + 1],
-                          imageDataRGBA[i + 2]);//在这一步可以考虑通过计算暗通道的平均值，判断是否属于有雾图片
-        if (oriDark[j] < low) {
-            low = oriDark[j];
-        }
-        if (oriDark[j] > heigh) {
-            heigh = oriDark[j];
-        }
-    }
+    darkGray(imageDataRGBA, oriR, oriG, oriB, oriDark, oriGray, width, height);
     LOG("  dark  end");
 
     unsigned char *oriMinDark = (unsigned char *) malloc(sizeof(unsigned char) * LEN);  //原图像的暗通道
     MinFilter(oriDark, width, height, mRadius, mRadius, oriMinDark);
     LOG("  dark  minfilter end");
-    AirlightEsimation(imageDataRGBA, oriMinDark, Air, LEN, low, heigh);
+    AirlightEsimation(imageDataRGBA, oriMinDark, Air, LEN, 0, 255);
     LOG(" ari esimation end");
     float *oriImageDivAirDark = (float *) malloc(sizeof(float) * LEN);
     ImageDivAir(imageDataRGBA, LEN, oriImageDivAirDark, Air);

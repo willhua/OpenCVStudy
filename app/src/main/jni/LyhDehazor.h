@@ -3,6 +3,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/opencv.hpp>
 #include "JniEnvInit.h"
+#include <pthread.h>
 
 #define UCHAR unsigned char
 #define DEBUG false
