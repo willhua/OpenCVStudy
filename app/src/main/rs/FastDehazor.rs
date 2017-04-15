@@ -213,7 +213,7 @@ static void copy(rs_allocation des, rs_allocation src, int width, int height)
     rsAllocationCopy2DRange(des, 0, 0, 0, NULL, width, height, src, 0, 0, 0, NULL);
 }
 
-void fastProcess(rs_allocation inImage, int width, int height)
+void fastProcess(rs_allocation inImage, rs_allocation out, int width, int height)
 {
 #ifdef DEBUG
     rsDebug("main fast process", 1);
@@ -279,7 +279,7 @@ void fastProcess(rs_allocation inImage, int width, int height)
     rsDebug("main   gDivAir:", gDivAir);
     gTable = rsCreateAllocation_uchar(256, 256);
     rsForEach(getTable, gTable, gTable);
-    rsForEach(setResult, inImage, inImage);
+    rsForEach(setResult, inImage, out);
 }
 
 

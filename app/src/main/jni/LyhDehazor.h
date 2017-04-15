@@ -10,6 +10,8 @@ class LyhDehazor
 {
 
 private:
+	int mWidth;
+	int mHeight;
     const static int RADIUS = 7;
     int * mDivN;
     int mRadius;
@@ -27,7 +29,10 @@ private:
     void GetTrans(float *data, int width, int height, int boxsize, float *out, float w);
     unsigned char MinLine(unsigned char *data, int width, int line, int left, int right);
 public:
-	template<class T1, class T2,class T3> void MeanFilter(T1 *data, T3 *outdata, int r, int width, int height , T2 cumtype);
+
+    void grayGuidFilter(cv::Mat gray, cv::Mat trans, int size, float eps);
+
+    template<class T1, class T2,class T3> void MeanFilter(T1 *data, T3 *outdata, int r, int width, int height , T2 cumtype);
 
 	    LyhDehazor(int width, int height, int r);
     ~LyhDehazor(void);    

@@ -2,11 +2,14 @@
 #include <algorithm>
 #include <sys/stat.h>
 #include <dirent.h>
+//#include "edge_filter.hpp"
 
-#define LOG(...) __android_log_print(ANDROID_LOG_DEBUG, "lyhopencvn", __VA_ARGS__)
+using namespace cv;
 
 
 LyhDehazor::LyhDehazor(int width, int height, int r) {
+    mWidth = width;
+    mHeight = height;
     mDivN = (int *) malloc(sizeof(int) * width * height);
     BoxDivN(mDivN, width, height, r);
     mRadius = r;
@@ -169,7 +172,7 @@ void LyhDehazor::Dehazor(unsigned char *imageDataRGBA, int width, int height) {
     unsigned char *oriB = (unsigned char *) malloc(sizeof(unsigned char) * LEN);
     unsigned char *oriDark = (unsigned char *) malloc(sizeof(unsigned char) * LEN);  //原图像的暗通道
     unsigned char *Air = (unsigned char *) malloc(sizeof(unsigned char) * 3);
-    LOG("dehazor start");
+    LOG("he   dehazor start");
     unsigned char low = 255, heigh = 0;
     for (int i = 0, j = 0; i < 4 * LEN; ++j, i += 4) //因为是rgba
     {
@@ -199,6 +202,14 @@ void LyhDehazor::Dehazor(unsigned char *imageDataRGBA, int width, int height) {
     GetTrans(oriImageDivAirDark, width, height, mRadius, trans, 0.95f);
     LOG(" get trans end");
 
+    LOG(" cv  guid trans start");
+
+    Mat transMat(mHeight, mWidth, CV_32F, trans);
+    Mat mat22(mHeight, mWidth, CV_32F, Scalar(0.9));
+    Mat trans2 = transMat.mul(mat22);
+    grayGuidFilter(transMat, trans2, mRadius*4, 0.1f);
+    LOG(" cv   guid trans end");
+
     //trans  255
     GuidedFilter(oriR, oriG, oriB, trans, width, height, mRadius * 4, 0.1f);
     LOG(" guid trans end");
@@ -222,7 +233,7 @@ void LyhDehazor::Dehazor(unsigned char *imageDataRGBA, int width, int height) {
         v = (imageDataRGBA[i + 2] - Air[2]) / MAX(0.1f, trans[j]) + Air[2];
         imageDataRGBA[i + 2] = CLAM(v);
     }
-    LOG(" last end");
+    LOG("he last end");
     //cv::Mat myfine(height, width, CV_8UC4, imageDataRGBA);
     //cv::imwrite("myfinal.jpg", myfine);
 
@@ -747,4 +758,56 @@ void LyhDehazor::BoxDivN(int *out, int width, int height, int r) {
         input[i] = 1;
     }
     BoxFilter(input, out, r, width, height, 1);
+}
+
+
+
+
+
+//gray:原图的灰度图，0 - 255，
+//trans：粗糙透射率， 0 - 255
+//size：窗口半径，2 * size + 1
+//eps
+void LyhDehazor::grayGuidFilter(Mat gray, Mat trans, int size, float eps)
+{
+    LOG("cv  1");
+    size = size * 2 + 1;
+    LOG("cv  1");
+
+    Mat norm255(mHeight, mWidth, CV_32F, Scalar(255));
+    Mat img(mHeight, mWidth, CV_32F);
+    Mat pmg(mHeight, mWidth, CV_32F);
+    LOG("cv  1");
+
+    img = gray.mul(1 / norm255, 1);
+    pmg = trans.mul(1 / norm255, 1);
+    LOG("cv  2");
+
+    Mat mean_img(mHeight, mWidth, CV_32F);
+    Mat mean_pmg(mHeight, mWidth, CV_32F);
+    blur(img, mean_img, Size(size, size));
+    blur(pmg, mean_pmg, Size(size, size));
+    Mat ip = img.mul(pmg);
+    Mat mean_ip(mHeight, mWidth, CV_32F);
+    blur(ip, mean_ip, Size(size, size));
+    Mat ii = img.mul(img);
+    Mat mean_ii(mHeight, mWidth, CV_32F);
+    LOG("cv  3");
+
+    blur(ii, mean_ii, Size(size, size));
+    Mat cov_ip = mean_ip - mean_img.mul(mean_pmg);
+    Mat var_ii = mean_ii - mean_img.mul(mean_img);
+    Mat mepr(mHeight, mWidth, CV_32F, Scalar(eps));
+    add(var_ii, mepr, var_ii);
+    Mat a(mHeight, mWidth, CV_32F);
+    divide(cov_ip, var_ii, a);
+    Mat b = mean_pmg - a.mul(mean_img);
+    LOG("cv  4");
+
+    Mat mean_a(mHeight, mWidth, CV_32F);
+    Mat mean_b(mHeight, mWidth, CV_32F);
+    blur(a, mean_a, Size(size, size));
+    blur(b, mean_b, Size(size, size));
+    trans = mean_a.mul(img) - mean_b;
+
 }

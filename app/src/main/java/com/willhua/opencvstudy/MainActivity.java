@@ -5,6 +5,7 @@ import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.MediaScannerConnection;
 import android.os.Bundle;
 import android.os.Environment;
 import android.Manifest.permission;
@@ -56,13 +57,14 @@ public class MainActivity extends Activity {
     @BindView(R.id.btn)
     Button mBtnStart;
 
-    String mDirectory = Environment.getExternalStorageDirectory().getPath() + "/去雾结果图";
+    String mDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getPath() + "/去雾结果图";
     String mBitmapFile = "1920-1080大山" + ".jpg";
     //String mBitmapFile = "1920-1080登山" + ".jpg";
     //String mBitmapFile = "1920-1080田野" + ".jpg";
     //String mBitmapFile = "1920-1080田野" + ".jpg";
     //String mBitmapFile = "1920-1080森林" + ".jpg";
     //String mBitmapFile = "4288-2848" + ".jpg";
+    //String mBitmapFile = "1250-702" + ".jpg";
 
 
     @Override
@@ -75,10 +77,24 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 //rgb2yuv();
-                fastDehazorRsTest();
-               // nativeAlgorithmTest();
+                //fastDehazorRsTest();
+                nativeAlgorithmTest();
+                //DoneAllImages();
             }
         }).start();
+    }
+
+    void DoneAllImages(){
+        try{
+            AssetManager am = getAssets();
+            String[] files = am.list("");
+            for(String file :files){
+                mBitmapFile = file;
+                nativeAlgorithmTest();
+            }
+        }catch (Exception e){
+
+        }
     }
 
     void nativeAlgorithmTest() {
@@ -91,17 +107,22 @@ public class MainActivity extends Activity {
             Bitmap bitmap1 = BitmapFactory.decodeStream(fis);
             setBeforeImage(bitmap1);
             Log.d(TAG, "dehazor start");
-            //OpenCVMethod.dehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
+            long time = System.currentTimeMillis();
+            OpenCVMethod.dehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
             //OpenCVMethod.fastDehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
             //Log.d(TAG, "dehazor start  2");
-            OpenCVMethod.fastDehazorCV(bitmap, bitmap.getWidth(), bitmap.getHeight(), 100);
+            //OpenCVMethod.fastDehazorCV(bitmap, bitmap.getWidth(), bitmap.getHeight(), 50);
             Log.d(TAG, "dehazor  end " + bitmap.getWidth() + " *" + bitmap.getHeight());
+            writeBitmapToFile(bitmap, getName(System.currentTimeMillis() - time, bitmap));
             setAfterImage(bitmap);
-            writeBitmapToFile(bitmap, "fastdehazorcv_air");
             fis.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    String getName(long time, Bitmap bitmap){
+        return "Size_" + bitmap.getWidth() + "*" + bitmap.getHeight() + "__Time_" + time;
     }
 
     void rgb2yuv() {
@@ -261,6 +282,8 @@ public class MainActivity extends Activity {
                         }
                     });
                 }
+                //MediaScannerConnection mediaScannerConnection = new MediaScannerConnection(getApplicationContext(), null);
+                //mediaScannerConnection.scanFile(mDirectory, null);
             }
         }).start();
     }
