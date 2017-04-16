@@ -9,7 +9,7 @@
 #define DEBUG false
 
 
-typedef struct ThreadParam{
+struct ThreadParam{
     UCHAR * rgba;
     UCHAR * r;
     UCHAR * g;

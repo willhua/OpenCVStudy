@@ -19,20 +19,18 @@ using namespace cv;
 void *darkGrayThread(void *args)
 {
     ThreadParam *param = (ThreadParam *)args;
-    LOG("start%d   end%d   ", param->start, param->end);
+    //LOG("start%d   end%d   ", param->start, param->end);
     int end = param->end;
     for(int i = param->start, j = i * 4; i < end; ++i, j+=4)
     {
-        LOG("d1");
         param->r[i] = param->rgba[j];
         param->g[i] = param->rgba[j + 1];
         param->b[i] = param->rgba[j + 2];
-        LOG("d2  %d    end%d", i, param->end);
         UCHAR uu = MINT(param->rgba[j], param->rgba[j + 1], param->rgba[j + 2]);
         param->dark[i] = uu;
         param->gray[i] = (UCHAR)((param->rgba[j] * 1224 + param->rgba[j + 1] * 2404 +param->rgba[j + 2] * 467) >> 12);
-        LOG("d3");
     }
+    return (void *)0;
 }
 
 /**
