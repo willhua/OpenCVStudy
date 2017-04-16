@@ -179,82 +179,6 @@ void getGrayImage(UCHAR * rgba, UCHAR * gray, int len)
 }
 
 
-
-
-typedef struct ThreadParam{
-    UCHAR * rgba;
-    UCHAR * r;
-    UCHAR * g;
-    UCHAR *b;
-    UCHAR *dark;
-    UCHAR *gray;
-    int start;
-    int end;
-};
-
-
-//TODO: 这里应该用查表法优化
-void *darkGrayThread(void *args)
-{
-    ThreadParam *param = (ThreadParam *)args;
-    for(int i = param->start, j = i * 4; i < param->end; ++i, j+=4)
-    {
-        param->r[i] = param->rgba[j];
-        param->g[i] = param->rgba[j + 1];
-        param->b[i] = param->rgba[j + 2];
-        param->dark[i] = MINT(param->rgba[j], param->rgba[j + 1], param->rgba[j + 2]);
-        param->gray[i] = (UCHAR)((param->rgba[j] * 1224 + param->rgba[j + 1] * 2404 +param->rgba[j + 2] * 467) >> 12);
-    }
-}
-
-/**
- * 分别得到rgb三个通道； 得到暗通道； 得到灰度图
- * @param rgba
- * @param r
- * @param g
- * @param b
- * @param dark
- * @param gray
- * @param w
- * @param h
- */
-void darkGray(UCHAR * rgba, UCHAR * r, UCHAR * g, UCHAR *b, UCHAR *dark, UCHAR *gray, int w, int h)
-{
-    const int cnt = 5;
-    pthread_t pts[cnt];
-    ThreadParam params[cnt];
-    int unit = h >> 2;
-    for(int i = 0; i < cnt; ++i)
-    {
-        params[i].start = i * w;
-        params[i].rgba = rgba;
-        params[i].r = r;
-        params[i].g = g;
-        params[i].b = b;
-        params[i].dark = dark;
-        params[i].gray = gray;
-        if(i == cnt - 1)
-        {
-            params[i].end = w * h;
-        }
-        else
-        {
-            params[i].end = w * (i + 1);
-        }
-        if(0 != pthread_create(&pts[i], NULL, darkGrayThread, (void *)(&params[i])))
-        {
-            LOG("ERROE  create darkGray %d", i);
-        }
-    }
-    for(int i = 0; i < cnt; ++i)
-    {
-        if(pthread_join(pts[i], NULL) != 0)
-        {
-            LOG("ERROE  JOIN darkGray %d", i);
-        }
-    }
-}
-
 void LyhDehazor::Dehazor(unsigned char *imageDataRGBA, int width, int height) {
     const int LEN = width * height;
     unsigned char *oriR = (unsigned char *) malloc(sizeof(unsigned char) * LEN);  //原图像的r通道
@@ -264,7 +188,7 @@ void LyhDehazor::Dehazor(unsigned char *imageDataRGBA, int width, int height) {
     unsigned char *oriGray = (unsigned char *) malloc(sizeof(unsigned char) * LEN);  //原图像的暗通道
     unsigned char *Air = (unsigned char *) malloc(sizeof(unsigned char) * 3);
     LOG("he   dehazor start");
-    darkGray(imageDataRGBA, oriR, oriG, oriB, oriDark, oriGray, width, height);
+    DarkGray(imageDataRGBA, oriR, oriG, oriB, oriDark, oriGray, width, height);
     LOG("  dark  end");
 
     unsigned char *oriMinDark = (unsigned char *) malloc(sizeof(unsigned char) * LEN);  //原图像的暗通道

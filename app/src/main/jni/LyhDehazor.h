@@ -7,6 +7,19 @@
 
 #define UCHAR unsigned char
 #define DEBUG false
+
+
+typedef struct ThreadParam{
+    UCHAR * rgba;
+    UCHAR * r;
+    UCHAR * g;
+    UCHAR *b;
+    UCHAR *dark;
+    UCHAR *gray;
+    int start;
+    int end;
+};
+
 class LyhDehazor
 {
 
@@ -29,6 +42,12 @@ private:
     void MinFilter(unsigned char *data, int width, int height, int boxWidth, int boxHeight, unsigned char *out);
     void GetTrans(float *data, int width, int height, int boxsize, float *out, float w);
     unsigned char MinLine(unsigned char *data, int width, int line, int left, int right);
+
+
+
+	void DarkGray(UCHAR * rgba, UCHAR * r, UCHAR * g, UCHAR *b, UCHAR *dark, UCHAR *gray, int w, int h);
+
+
 public:
 
     void grayGuidFilter(cv::Mat gray, cv::Mat trans, int size, float eps);
