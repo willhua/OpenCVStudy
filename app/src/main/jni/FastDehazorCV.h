@@ -18,14 +18,14 @@ class FastDehazorCV
 public:
     FastDehazorCV();
     ~FastDehazorCV();
-    int process(unsigned char * rgba, int width, int height, int boxRadius);
+    int process(unsigned char * rgba, int width, int height, int boxRadius, float p);
     void setP(float p);
     static JavaVM * mVM;
 protected:
 private:
     static void * getDarkThread(void * args);
     unsigned char getDarkChannel(unsigned char * rgba, unsigned char * out, int width, int height, unsigned char &max);
-
+    int mRadius;
     int * mDivN;
     float mP;
     int mSkyThreshold;

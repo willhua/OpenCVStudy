@@ -1,19 +1,21 @@
 package com.willhua.opencvstudy;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Environment;
 import android.Manifest.permission;
-import android.provider.ContactsContract;
+import android.provider.MediaStore;
+import android.provider.Settings;
 import android.renderscript.Allocation;
-import android.renderscript.Element;
 import android.renderscript.RenderScript;
-import android.renderscript.Type;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -21,15 +23,17 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.willhua.opencvstudy.rs.ScriptC_FastDehazor;
-import com.willhua.opencvstudy.rs.ScriptC_GetDark;
 import com.willhua.opencvstudy.rs.ScriptC_Rgb2Yuv;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.annotation.ElementType;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -40,7 +44,10 @@ import static android.renderscript.Allocation.USAGE_SHARED;
 
 public class MainActivity extends Activity {
     private static final String TAG = "MainActivity";
+    private static final int PICK_PIC = 1111;
 
+    @BindView(R.id.tv)
+    TextView mInfo;
     @BindView(R.id.before)
     ImageView mBeforeImage;
     @BindView(R.id.after)
@@ -53,10 +60,19 @@ public class MainActivity extends Activity {
     SeekBar mSeekBarP2;
     @BindView(R.id.info_param2)
     TextView mInfoP2;
-    @BindView(R.id.btn)
+    @BindView(R.id.btn_auto)
     Button mBtnStart;
+    @BindView(R.id.btn_cho)
+    Button mBtnCho;
 
-    String mDirectory = Environment.getExternalStorageDirectory().getPath() + "/去雾结果图";
+
+    AtomicBoolean mProssing = new AtomicBoolean(false);
+    String mPrevFile;
+    Executor mExecetor = Executors.newSingleThreadExecutor();
+    float mP = 1.3f;
+    int mRadius = 50;
+    String mDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM) + "/去雾结果图";
+    String mDirectoryAuto = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM) + "/自动去雾";
     String mBitmapFile = "1920-1080大山" + ".jpg";
     //String mBitmapFile = "1920-1080登山" + ".jpg";
     //String mBitmapFile = "1920-1080田野" + ".jpg";
@@ -71,37 +87,50 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         fileCheck();
+        viewSet();
+        OpenCVMethod.initNative();
+        /*
         new Thread(new Runnable() {
             @Override
             public void run() {
                 //rgb2yuv();
-                fastDehazorRsTest();
-               // nativeAlgorithmTest();
+                //fastDehazorRsTest();
+                nativeAlgorithmTest();
             }
-        }).start();
+        }).start();   */
     }
 
-    void nativeAlgorithmTest() {
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        OpenCVMethod.freeNative();
+    }
+
+    /**
+     *
+     * @param stream
+     * @param name   完整绝对路径
+     */
+    void nativeAlgorithmTest(InputStream stream, String name) {
+        mProssing.set(true);
         try {
-            AssetManager am = getAssets();
-            InputStream fis = am.open(mBitmapFile);
-            Bitmap bitmap = BitmapFactory.decodeStream(fis);
-            fis.close();
-            fis = am.open(mBitmapFile);
-            Bitmap bitmap1 = BitmapFactory.decodeStream(fis);
+            mPrevFile = name;
+            Bitmap bitmap = BitmapFactory.decodeStream(stream);
+            stream.close();
+            Bitmap bitmap1 = bitmap.copy(Bitmap.Config.ARGB_8888, true);
             setBeforeImage(bitmap1);
             Log.d(TAG, "dehazor start");
             //OpenCVMethod.dehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
             //OpenCVMethod.fastDehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
             //Log.d(TAG, "dehazor start  2");
-            OpenCVMethod.fastDehazorCV(bitmap, bitmap.getWidth(), bitmap.getHeight(), 100);
+            OpenCVMethod.fastDehazorCV(bitmap, bitmap.getWidth(), bitmap.getHeight(), mRadius, mP);
             Log.d(TAG, "dehazor  end " + bitmap.getWidth() + " *" + bitmap.getHeight());
             setAfterImage(bitmap);
-            writeBitmapToFile(bitmap, "fastdehazorcv_air");
-            fis.close();
+            writeBitmapToFile(bitmap, name);
         } catch (IOException e) {
             e.printStackTrace();
         }
+        mProssing.set(false);
     }
 
     void rgb2yuv() {
@@ -187,10 +216,10 @@ public class MainActivity extends Activity {
         RenderScript renderScript = RenderScript.create(getApplication());
         ScriptC_FastDehazor scriptC_fastDehazor = new ScriptC_FastDehazor(renderScript);
         Log.d(TAG, "rs init 2");
-        Allocation in = Allocation.createFromBitmap(renderScript, bitmap, Allocation.MipmapControl.MIPMAP_NONE,  USAGE_SCRIPT);
-        Allocation out = Allocation.createFromBitmap(renderScript, bitmapout, Allocation.MipmapControl.MIPMAP_NONE,  USAGE_SCRIPT);
+        Allocation in = Allocation.createFromBitmap(renderScript, bitmap, Allocation.MipmapControl.MIPMAP_NONE, USAGE_SCRIPT);
+        Allocation out = Allocation.createFromBitmap(renderScript, bitmapout, Allocation.MipmapControl.MIPMAP_NONE, USAGE_SCRIPT);
         Log.d(TAG, "rs start");
-        scriptC_fastDehazor.invoke_fastProcess(in, out, bitmap.getWidth(), bitmap.getHeight());
+        //  scriptC_fastDehazor.invoke_fastProcess(in, out, bitmap.getWidth(), bitmap.getHeight());
         renderScript.finish();
         Log.d(TAG, "rs end");
         out.copyTo(bitmapout);
@@ -232,37 +261,48 @@ public class MainActivity extends Activity {
                 e.printStackTrace();
             }
         }
+        file = new File(mDirectoryAuto);
+        if (!file.exists()) {
+            try {
+                boolean r = file.mkdirs();
+                Log.d(TAG, "mkdir   " + r);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
     }
 
+    /**
+     * 保存在源文件的同一路径，只是在后面增加时间和参数
+     * @param bitmap
+     * @param name   源文件的完整路径名
+     */
     void writeBitmapToFile(final Bitmap bitmap, final String name) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                boolean result = false;
-                final File file = new File(mDirectory + "/" + System.currentTimeMillis() + "_" + name + ".jpg");
-                Log.d(TAG, "file " + file);
-                if (bitmap != null) {
-                    try {
-                        if (!file.exists()) {
-                            file.createNewFile();
-                        }
-                        result = bitmap.compress(Bitmap.CompressFormat.JPEG, 98, new FileOutputStream(file));
-                    } catch (Exception e) {
-                        Log.d(TAG, "write fail: " + e.getMessage());
-                        e.printStackTrace();
-                    }
+
+        boolean result = false;
+        final File file = new File(name.substring(0,name.lastIndexOf(".")) + "_" + System.currentTimeMillis() + "_" + mRadius + "_" + mP + ".jpg");
+        Log.d(TAG, "file " + file);
+        if (bitmap != null) {
+            try {
+                if (!file.exists()) {
+                    file.createNewFile();
                 }
-                if (!result) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(getApplicationContext(), "图片保存失败：" + file.getName(), Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                }
+                result = bitmap.compress(Bitmap.CompressFormat.JPEG, 98, new FileOutputStream(file));
+            } catch (Exception e) {
+                Log.d(TAG, "write fail: " + e.getMessage());
+                e.printStackTrace();
             }
-        }).start();
+        }
+        if (!result) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(), "图片保存失败：" + file.getName(), Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
     }
 
     void setAfterImage(final Bitmap bitmap) {
@@ -279,6 +319,169 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 mBeforeImage.setImageBitmap(bitmap);
+            }
+        });
+    }
+
+    void changUIStatus(final boolean b) {
+        mSeekBarP1.setEnabled(b);
+        mSeekBarP2.setEnabled(b);
+        mBtnStart.setEnabled(b);
+        mBtnCho.setEnabled(b);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, final Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PICK_PIC && resultCode == RESULT_OK && data != null) {
+            changUIStatus(false);
+            mExecetor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(getApplicationContext(), "处理中...", Toast.LENGTH_SHORT).show();
+                                mInfo.setText("处理中...");
+                            }
+                        });
+                        Cursor cursor = getContentResolver().query(data.getData(), new String[]{MediaStore.Images.Media.DATA}, null, null, null);
+                        cursor.moveToFirst();
+                        String file = cursor.getString(0);
+                        nativeAlgorithmTest(new FileInputStream(new File(file)), file);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            changUIStatus(true);
+                            mInfo.setText("保存完成");
+                        }
+                    });
+                }
+            });
+
+        }
+    }
+
+    boolean checkPicture(String name){
+        name = name.toLowerCase();
+        return name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png");
+    }
+
+    void viewSet() {
+        final float P_MAX = 2.0f;
+        final float P_MIN = 0.5f;
+        mSeekBarP1.setProgress((int)((mP - P_MIN) / (P_MAX - P_MIN) * 100));
+        mInfoP1.setText(mP + "");
+        mSeekBarP2.setProgress(mRadius / 2);
+        mInfoP2.setText(mRadius + "");
+
+        mBtnStart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                changUIStatus(false);
+                File file = new File(mDirectoryAuto);
+                final File[] files = file.listFiles();
+                if(files.length == 0)
+                {
+                    Toast.makeText(getApplicationContext(), "没找到图片", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Toast.makeText(getApplicationContext(), "开始处理。。。", Toast.LENGTH_SHORT).show();
+                mInfo.setText("处理中...");
+                mExecetor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            for (File f : files) {
+                                if (!f.isDirectory() && checkPicture(f.getAbsolutePath())) {
+                                    nativeAlgorithmTest(new FileInputStream(f), f.getAbsolutePath());
+                                }
+                            }
+                        } catch (Exception e) {
+
+                        }
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(getApplicationContext(), "处理完成！", Toast.LENGTH_SHORT).show();
+                                changUIStatus(true);
+                                mInfo.setText("处理完成");
+                            }
+                        });
+                    }
+                });
+            }
+        });
+
+        mBtnCho.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                startActivityForResult(intent, PICK_PIC);
+            }
+        });
+
+        mSeekBarP1.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                mP = (P_MAX - P_MIN) * seekBar.getProgress() / 100 + P_MIN;
+                mP = ((int)(mP * 100)) / 100f;
+                mInfoP1.setText(mP + "");
+                if(!mProssing.get() && !mPrevFile.isEmpty()){
+                    mExecetor.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                nativeAlgorithmTest(new FileInputStream(new File(mPrevFile)), mPrevFile);
+                            } catch (FileNotFoundException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+
+        mSeekBarP2.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                mRadius = 2 * seekBar.getProgress();
+                mInfoP2.setText(mRadius + "");
+                if(!mProssing.get() && !mPrevFile.isEmpty()){
+                    mExecetor.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                nativeAlgorithmTest(new FileInputStream(new File(mPrevFile)), mPrevFile);
+                            } catch (FileNotFoundException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
             }
         });
     }

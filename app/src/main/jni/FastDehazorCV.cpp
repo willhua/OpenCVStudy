@@ -9,7 +9,8 @@ using namespace cv;
 
 FastDehazorCV::FastDehazorCV()
 {
-    mP = 1.5f;
+    mP = 1.3f;
+    mRadius = 50;
     mSkyThreshold = 15;
     mResultTable = (unsigned char *)malloc(sizeof(unsigned char) * 256 * 256);
 }
@@ -18,7 +19,7 @@ FastDehazorCV::~FastDehazorCV()
 {
     if(mResultTable != NULL)
     {
-        delete [] mResultTable;
+        free(mResultTable);
     }
 }
 
@@ -308,16 +309,17 @@ void getResult(unsigned char * rgba, unsigned char * lx, unsigned char * table, 
 
 
 
-int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxRadius)
+int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxRadius, float p)
 {
-    if (rgba == NULL || width < 1 || height < 1 || boxRadius < 1)
+    if (rgba == NULL || width < 1 || height < 1 || boxRadius < 1 || p < 0.2)
     {
         return INPUT_NULL;
     }
-
+    mP = p;
+    mRadius = boxRadius;
     Mat inputMat(height, width, CV_8UC4, rgba);
     const int LEN = width * height;
-    const int WIN_SIZE = 2 * boxRadius + 1;
+    const int WIN_SIZE = 2 * mRadius + 1;
 
 
 
@@ -361,19 +363,21 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
     }
     mAir = (unsigned char)((maveMax + rowMax) / 2);
     LOG("a end");
+
+
     LOG("table start");
     InitResultTable();
     LOG("table end");
-
 
     //计算输出
     LOG("result start");
     getResult(rgba, lx, mResultTable, LEN);
     LOG("result end");
 
-    delete [] mResultTable;
-    delete [] lx;
-    delete [] darkChannel;
+    free(lx);
+    free(darkChannel);
+    LOG("return end");
+
     return 0;
 }
 

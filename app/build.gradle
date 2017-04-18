@@ -2,12 +2,12 @@ apply plugin: 'com.android.application'
 
 android {
     signingConfigs {
-        yhkey {
+     /*   yhkey {
             keyAlias 'yhkey'
             keyPassword '378876155'
             storeFile file('F:/GitRepo/yhkeystore.jks')
             storePassword '378876155'
-        }
+        }  */
     }
     compileSdkVersion 24
     buildToolsVersion '25.0.2'
