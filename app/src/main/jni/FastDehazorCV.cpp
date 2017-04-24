@@ -32,37 +32,23 @@ void FastDehazorCV::setP(float p)
     }
 }
 
-inline unsigned char vlaueChange(int v)
-{
-    //unsigned =
-}
-
 void FastDehazorCV::InitResultTable()
 {
+    const float Threshold = 50;
+    const float s = 1 / Threshold;
+    float scale = 1.0;
     float air = 1.0f / mAir;
     int index = 0;
     float result;
-  //  int threshold = mAir - mSkyThreshold;
     unsigned char v;
     for(int i = 0; i < 256; ++i) //符合暗通道的区域
     {
         for(int j = 0; j < 256; ++j)
         {
             result = (i - j) / (1 - j * air);
-         //   result = result + (int)((128 - result) * mScale);
             mResultTable[index++] = (unsigned char)CLAM(result);
         }
     }
- /*   for (int i = threshold; i < 256; ++i) {//天空区域，需要增大透射率
-        for(int j = 0; j < 256; ++j)
-        {
-            float scale = ABS(mAir - j) / (float)75;
-            int newlx = MIN(mAir, scale * j);
-            result = (i - newlx) / (1 - newlx * air);
-            LOG("inittable       old %d   new  %d", j, newlx);
-            mResultTable[index++] = (unsigned char)CLAM(result);
-        }
-    }   */
 }
 
 
@@ -208,22 +194,13 @@ unsigned char FastDehazorCV::getDarkChannel(unsigned char * rgba, unsigned char 
 
 void * getLxThread(void *args)
 {
-    const double Threshold = 100;
     TaskParam * param = (TaskParam*)args;
     unsigned char a;
     unsigned char b;
-    //LOG("lxt %d   %d  ", param->start, param->end);
-    double scale = 1.0;
     for(int i = param->start; i < param->end; ++i)
     {
         b = param->dark[i];
-        if(b < Threshold){
-            scale = b / Threshold ;
-         //   LOG("scale p  %f", param->p * scale);
-        }else{
-            scale = 1;
-        }
-        a = (unsigned char)( param->p  * scale * param->rgba[i]);
+        a = (unsigned char)( param->p * param->rgba[i]);
         param->out[i] = a < b ? a : b;
     }
     return (void *)0;
@@ -266,25 +243,44 @@ void getLx(unsigned char * lx, unsigned char * mave, unsigned char * dark, float
 
 void * getResultThread(void *args)
 {
+    const float ts = 80;
+    const float tss = 1 / ts;
+    float scale;
     TaskParam *param = (TaskParam*)args;
     unsigned char *rgba = param->rgba;
     unsigned char *lx = param->dark;
     unsigned char *table = param->out;
-    for(int i = param->start, index = (i << 2) - 1, value; i < param->end; ++i, ++index)
-    {
-        value = rgba[++index] ;
-        value = value << 8;
-        value +=  lx[i];
-        rgba[index] = table[value ];
-        value = rgba[++index] ;
-        value = value << 8;
-        value +=  lx[i];
-        rgba[index] = table[value];
 
-        value = rgba[++index] ;
+    unsigned char result, r, g, b;
+    for(int i = param->start, index = (i << 2), value; i < param->end; ++i, index+=4)
+    {
+        value = rgba[index] ;
         value = value << 8;
         value +=  lx[i];
-        rgba[index] = table[value ];
+        r = table[value ];
+        value = rgba[1+index] ;
+        value = value << 8;
+        value +=  lx[i];
+        g = table[value];
+
+        value = rgba[2+index] ;
+        value = value << 8;
+        value +=  lx[i];
+        b = table[value ];
+        result = MINT(r, g, b);
+        if(result <ts)
+        {
+            scale = result * tss;
+            rgba[index] = (1 - scale) * rgba[index] + scale * r;
+            rgba[index+1] = (1 - scale) * rgba[index+1] + scale * g;
+            rgba[index+2] = (1 - scale) * rgba[index+2] + scale * b;
+        } else{
+            rgba[index] = r;
+            rgba[index+1] = g;
+            rgba[index+2] = b;
+
+        }
+
     }
     return (void *)0;
 }
