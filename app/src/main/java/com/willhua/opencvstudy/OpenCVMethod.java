@@ -16,5 +16,5 @@ public class OpenCVMethod {
     public static native void initNative();
     public static native void freeNative();
     public static native void fastDehazor(Bitmap bitmap, int width, int height);
-    public static native void fastDehazorCV(Bitmap bitmap, int width, int height, int radius, float p);
+    public static native void fastDehazorCV(Bitmap bitmap, int width, int height, int radius, float p, float s);
 }

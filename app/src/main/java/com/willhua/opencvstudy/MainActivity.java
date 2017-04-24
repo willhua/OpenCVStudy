@@ -1,12 +1,14 @@
 package com.willhua.opencvstudy;
 
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.Manifest.permission;
@@ -60,6 +62,10 @@ public class MainActivity extends Activity {
     SeekBar mSeekBarP2;
     @BindView(R.id.info_param2)
     TextView mInfoP2;
+    @BindView(R.id.param3)
+    SeekBar mSeekBarP3;
+    @BindView(R.id.info_param3)
+    TextView mInfoP3;
     @BindView(R.id.btn_auto)
     Button mBtnStart;
     @BindView(R.id.btn_cho)
@@ -69,8 +75,9 @@ public class MainActivity extends Activity {
     AtomicBoolean mProssing = new AtomicBoolean(false);
     String mPrevFile;
     Executor mExecetor = Executors.newSingleThreadExecutor();
-    float mP = 1.3f;
-    int mRadius = 50;
+    float mP = 1.2f;
+    int mRadius = 24;
+    float mScale = 0f;
     String mDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM) + "/去雾结果图";
     String mDirectoryAuto = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM) + "/自动去雾";
     String mBitmapFile = "1920-1080大山" + ".jpg";
@@ -123,7 +130,7 @@ public class MainActivity extends Activity {
             //OpenCVMethod.dehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
             //OpenCVMethod.fastDehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
             //Log.d(TAG, "dehazor start  2");
-            OpenCVMethod.fastDehazorCV(bitmap, bitmap.getWidth(), bitmap.getHeight(), mRadius, mP);
+            OpenCVMethod.fastDehazorCV(bitmap, bitmap.getWidth(), bitmap.getHeight(), mRadius, mP, mScale);
             Log.d(TAG, "dehazor  end " + bitmap.getWidth() + " *" + bitmap.getHeight());
             setAfterImage(bitmap);
             writeBitmapToFile(bitmap, name);
@@ -281,7 +288,7 @@ public class MainActivity extends Activity {
     void writeBitmapToFile(final Bitmap bitmap, final String name) {
 
         boolean result = false;
-        final File file = new File(name.substring(0,name.lastIndexOf(".")) + "_" + System.currentTimeMillis() + "_" + mRadius + "_" + mP + ".jpg");
+        final File file = new File(name.substring(0,name.lastIndexOf(".")) + "_" + System.currentTimeMillis() + "_" + mRadius + "_" + mP + "_" + mScale + ".jpg");
         Log.d(TAG, "file " + file);
         if (bitmap != null) {
             try {
@@ -301,6 +308,11 @@ public class MainActivity extends Activity {
                     Toast.makeText(getApplicationContext(), "图片保存失败：" + file.getName(), Toast.LENGTH_SHORT).show();
                 }
             });
+        }else {
+            ContentValues cv = new ContentValues();
+            cv.put(MediaStore.MediaColumns.DATA, file.getAbsolutePath());
+            cv.put(MediaStore.MediaColumns.DATE_ADDED, System.currentTimeMillis());
+            Uri uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv);
         }
 
     }
@@ -326,6 +338,7 @@ public class MainActivity extends Activity {
     void changUIStatus(final boolean b) {
         mSeekBarP1.setEnabled(b);
         mSeekBarP2.setEnabled(b);
+        mSeekBarP3.setEnabled(b);
         mBtnStart.setEnabled(b);
         mBtnCho.setEnabled(b);
     }
@@ -374,10 +387,14 @@ public class MainActivity extends Activity {
     void viewSet() {
         final float P_MAX = 2.0f;
         final float P_MIN = 0.5f;
+        final float S_MAX = 0.3f;
+        final float S_MIN = 0f;
         mSeekBarP1.setProgress((int)((mP - P_MIN) / (P_MAX - P_MIN) * 100));
         mInfoP1.setText(mP + "");
         mSeekBarP2.setProgress(mRadius / 2);
         mInfoP2.setText(mRadius + "");
+        mSeekBarP3.setProgress((int)((mScale - S_MIN) / (S_MAX - S_MIN) * 100));
+        mInfoP3.setText(mScale + "");
 
         mBtnStart.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -484,6 +501,38 @@ public class MainActivity extends Activity {
 
             }
         });
+
+
+        mSeekBarP3.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                mScale = (S_MAX - S_MIN) * seekBar.getProgress() / 100 + S_MIN;
+                mScale = ((int)(mScale * 100)) / 100f;
+                mInfoP3.setText(mScale + "");
+                if(!mProssing.get() && !mPrevFile.isEmpty()){
+                    mExecetor.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                nativeAlgorithmTest(new FileInputStream(new File(mPrevFile)), mPrevFile);
+                            } catch (FileNotFoundException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+
     }
 
 }

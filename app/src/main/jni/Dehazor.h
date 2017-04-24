@@ -22,7 +22,7 @@ extern "C" {
 #endif
 JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_OpenCVMethod_dehazor(JNIEnv *env, jclass cls, jobject bitmap, int width, int height);
 JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_OpenCVMethod_fastDehazor(JNIEnv *env, jclass cls, jobject bitmap, int width, int height);
-JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_OpenCVMethod_fastDehazorCV(JNIEnv *env, jclass cls, jobject bitmap, int width, int height, int radius, float p);
+JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_OpenCVMethod_fastDehazorCV(JNIEnv *env, jclass cls, jobject bitmap, int width, int height, int radius, float p, float s);
 JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_OpenCVMethod_getDark(JNIEnv *env, jclass cls, jobject bitmap, int width, int height);
 JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_OpenCVMethod_initNative(JNIEnv *env, jclass cls);
 JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_OpenCVMethod_freeNative(JNIEnv *env, jclass cls);

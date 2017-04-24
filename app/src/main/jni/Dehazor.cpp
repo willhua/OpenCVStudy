@@ -36,12 +36,12 @@ JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_OpenCVMethod_fastDehazor(JNI
     LOG("fast   dehazor  end");
 }
 
-JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_OpenCVMethod_fastDehazorCV(JNIEnv *env, jclass cls, jobject bitmap, int width, int height, int radius, float p) {
+JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_OpenCVMethod_fastDehazorCV(JNIEnv *env, jclass cls, jobject bitmap, int width, int height, int radius, float p, float s) {
     LOG("fast  dehazor  begin");
     char * data;
 
     AndroidBitmap_lockPixels(env, bitmap, (void **)&data);
-    Dehazor::fastDehazorCV->process((UCHAR *)data, width, height, radius, p);
+    Dehazor::fastDehazorCV->process((UCHAR *)data, width, height, radius, p, s);
 
     AndroidBitmap_unlockPixels(env, bitmap);
     LOG("fast   dehazor  end");

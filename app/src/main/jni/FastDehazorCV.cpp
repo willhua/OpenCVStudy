@@ -10,6 +10,7 @@ using namespace cv;
 FastDehazorCV::FastDehazorCV()
 {
     mP = 1.3f;
+    mScale = 0.1f;
     mRadius = 50;
     mSkyThreshold = 15;
     mResultTable = (unsigned char *)malloc(sizeof(unsigned char) * 256 * 256);
@@ -31,17 +32,24 @@ void FastDehazorCV::setP(float p)
     }
 }
 
+inline unsigned char vlaueChange(int v)
+{
+    //unsigned =
+}
+
 void FastDehazorCV::InitResultTable()
 {
     float air = 1.0f / mAir;
     int index = 0;
     float result;
   //  int threshold = mAir - mSkyThreshold;
+    unsigned char v;
     for(int i = 0; i < 256; ++i) //符合暗通道的区域
     {
         for(int j = 0; j < 256; ++j)
         {
             result = (i - j) / (1 - j * air);
+         //   result = result + (int)((128 - result) * mScale);
             mResultTable[index++] = (unsigned char)CLAM(result);
         }
     }
@@ -200,14 +208,22 @@ unsigned char FastDehazorCV::getDarkChannel(unsigned char * rgba, unsigned char 
 
 void * getLxThread(void *args)
 {
+    const double Threshold = 100;
     TaskParam * param = (TaskParam*)args;
     unsigned char a;
     unsigned char b;
     //LOG("lxt %d   %d  ", param->start, param->end);
+    double scale = 1.0;
     for(int i = param->start; i < param->end; ++i)
     {
-        a = (unsigned char)( param->p * param->rgba[i]);
         b = param->dark[i];
+        if(b < Threshold){
+            scale = b / Threshold ;
+         //   LOG("scale p  %f", param->p * scale);
+        }else{
+            scale = 1;
+        }
+        a = (unsigned char)( param->p  * scale * param->rgba[i]);
         param->out[i] = a < b ? a : b;
     }
     return (void *)0;
@@ -309,12 +325,13 @@ void getResult(unsigned char * rgba, unsigned char * lx, unsigned char * table, 
 
 
 
-int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxRadius, float p)
+int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxRadius, float p, float scale)
 {
     if (rgba == NULL || width < 1 || height < 1 || boxRadius < 1 || p < 0.2)
     {
         return INPUT_NULL;
     }
+    mScale = scale;
     mP = p;
     mRadius = boxRadius;
     Mat inputMat(height, width, CV_8UC4, rgba);

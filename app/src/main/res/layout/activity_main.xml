@@ -71,11 +71,12 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/ll2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_below="@+id/ll1"
-            android:paddingTop="10dp"
+            android:paddingTop="7dp"
             android:layout_toStartOf="@id/btns"
             android:orientation="horizontal">
 
@@ -87,6 +88,29 @@
 
             <TextView
                 android:id="@+id/info_param2"
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:padding="0dp"
+                android:text="p2" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@+id/ll2"
+            android:paddingTop="7dp"
+            android:layout_toStartOf="@id/btns"
+            android:orientation="horizontal">
+
+            <SeekBar
+                android:id="@+id/param3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="5" />
+
+            <TextView
+                android:id="@+id/info_param3"
                 android:layout_width="50dp"
                 android:layout_height="wrap_content"
                 android:padding="0dp"
