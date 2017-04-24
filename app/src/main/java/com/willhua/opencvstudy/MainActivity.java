@@ -13,7 +13,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.Manifest.permission;
 import android.provider.MediaStore;
-import android.provider.Settings;
 import android.renderscript.Allocation;
 import android.renderscript.Element;
 import android.renderscript.RenderScript;
@@ -80,7 +79,7 @@ public class MainActivity extends Activity {
     Executor mExecetor = Executors.newSingleThreadExecutor();
     float mP = 1.15f;
     int mRadius = 24;
-    float mScale = 0f;
+    int mThreshold = 60;
     String mDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM) + "/去雾结果图";
     String mDirectoryAuto = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM) + "/自动去雾";
     String mBitmapFile = "1920-1080大山" + ".jpg";
@@ -147,7 +146,7 @@ public class MainActivity extends Activity {
             //OpenCVMethod.dehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
             //OpenCVMethod.fastDehazor(bitmap, bitmap.getWidth(), bitmap.getHeight());
             //Log.d(TAG, "dehazor start  2");
-            OpenCVMethod.fastDehazorCV(bitmap, bitmap.getWidth(), bitmap.getHeight(), mRadius, mP, mScale);
+            OpenCVMethod.fastDehazorCV(bitmap, bitmap.getWidth(), bitmap.getHeight(), mRadius, mP, mThreshold);
             Log.d(TAG, "dehazor  end " + bitmap.getWidth() + " *" + bitmap.getHeight());
             setAfterImage(bitmap);
             writeBitmapToFile(bitmap, name);
@@ -305,7 +304,7 @@ public class MainActivity extends Activity {
     void writeBitmapToFile(final Bitmap bitmap, final String name) {
 
         boolean result = false;
-        final File file = new File(name.substring(0,name.lastIndexOf(".")) + "_" + System.currentTimeMillis() + "_" + mRadius + "_" + mP + "_" + mScale + ".jpg");
+        final File file = new File(name.substring(0,name.lastIndexOf(".")) + "_" + System.currentTimeMillis() + "_" + mRadius + "_" + mP + "_" + mThreshold + ".jpg");
         Log.d(TAG, "file " + file);
         if (bitmap != null) {
             try {
@@ -404,14 +403,12 @@ public class MainActivity extends Activity {
     void viewSet() {
         final float P_MAX = 2.0f;
         final float P_MIN = 0.5f;
-        final float S_MAX = 0.3f;
-        final float S_MIN = 0f;
         mSeekBarP1.setProgress((int)((mP - P_MIN) / (P_MAX - P_MIN) * 100));
         mInfoP1.setText(mP + "");
         mSeekBarP2.setProgress(mRadius / 2);
         mInfoP2.setText(mRadius + "");
-        mSeekBarP3.setProgress((int)((mScale - S_MIN) / (S_MAX - S_MIN) * 100));
-        mInfoP3.setText(mScale + "");
+        mSeekBarP3.setProgress(mThreshold);
+        mInfoP3.setText(mThreshold + "");
 
         mBtnStart.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -523,9 +520,8 @@ public class MainActivity extends Activity {
         mSeekBarP3.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                mScale = (S_MAX - S_MIN) * seekBar.getProgress() / 100 + S_MIN;
-                mScale = ((int)(mScale * 100)) / 100f;
-                mInfoP3.setText(mScale + "");
+                mThreshold = progress;
+                mInfoP3.setText(mThreshold + "");
                 if(!mProssing.get() && !mPrevFile.isEmpty()){
                     mExecetor.execute(new Runnable() {
                         @Override

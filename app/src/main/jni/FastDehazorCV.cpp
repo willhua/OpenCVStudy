@@ -7,10 +7,12 @@
 
 using namespace cv;
 
+int FastDehazorCV::mThreshold = 60;
+
 FastDehazorCV::FastDehazorCV()
 {
     mP = 1.3f;
-    mScale = 0.1f;
+    mThreshold = 60;
     mRadius = 50;
     mSkyThreshold = 15;
     mResultTable = (unsigned char *)malloc(sizeof(unsigned char) * 256 * 256);
@@ -243,8 +245,7 @@ void getLx(unsigned char * lx, unsigned char * mave, unsigned char * dark, float
 
 void * getResultThread(void *args)
 {
-    const float ts = 60;
-    const float tss = 1 / ts;
+    const float tss = 1.0f / FastDehazorCV::mThreshold;
     float scale;
     TaskParam *param = (TaskParam*)args;
     unsigned char *rgba = param->rgba;
@@ -268,7 +269,7 @@ void * getResultThread(void *args)
         value +=  lx[i];
         b = table[value ];
         result = MINT(r, g, b);
-        if(result <ts)
+        if(result < FastDehazorCV::mThreshold)
         {
             scale = result * tss;
             rgba[index] = (1 - scale) * rgba[index] + scale * r;
@@ -321,13 +322,13 @@ void getResult(unsigned char * rgba, unsigned char * lx, unsigned char * table, 
 
 
 
-int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxRadius, float p, float scale)
+int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxRadius, float p, int t)
 {
     if (rgba == NULL || width < 1 || height < 1 || boxRadius < 1 || p < 0.2)
     {
         return INPUT_NULL;
     }
-    mScale = scale;
+    mThreshold = t;
     mP = p;
     mRadius = boxRadius;
     Mat inputMat(height, width, CV_8UC4, rgba);
