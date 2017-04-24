@@ -15,7 +15,9 @@ import android.Manifest.permission;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.renderscript.Allocation;
+import android.renderscript.Element;
 import android.renderscript.RenderScript;
+import android.renderscript.Type;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -26,6 +28,7 @@ import android.widget.Toast;
 
 import com.willhua.opencvstudy.rs.ScriptC_FastDehazor;
 import com.willhua.opencvstudy.rs.ScriptC_Rgb2Yuv;
+import com.willhua.opencvstudy.rs.ScriptC_Sample;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -75,7 +78,7 @@ public class MainActivity extends Activity {
     AtomicBoolean mProssing = new AtomicBoolean(false);
     String mPrevFile;
     Executor mExecetor = Executors.newSingleThreadExecutor();
-    float mP = 1.2f;
+    float mP = 1.15f;
     int mRadius = 24;
     float mScale = 0f;
     String mDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM) + "/去雾结果图";
@@ -88,6 +91,19 @@ public class MainActivity extends Activity {
     //String mBitmapFile = "4288-2848" + ".jpg";
 
 
+    private void rsSample(){
+        RenderScript renderScript = RenderScript.create(getApplication());
+        ScriptC_Sample scriptC_sample = new ScriptC_Sample(renderScript);
+        Bitmap bitmapin = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);
+        Allocation in = Allocation.createFromBitmap(renderScript, bitmapin);
+        Allocation out = Allocation.createTyped(renderScript,
+                Type.createXY(renderScript, Element.RGBA_8888(renderScript), 100, 100));
+        scriptC_sample.invoke_setParam(0, 5);
+        scriptC_sample.forEach_invert(in, out);
+        renderScript.finish();
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -96,6 +112,7 @@ public class MainActivity extends Activity {
         fileCheck();
         viewSet();
         OpenCVMethod.initNative();
+        //rsSample();
         /*
         new Thread(new Runnable() {
             @Override

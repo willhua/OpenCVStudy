@@ -243,7 +243,7 @@ void getLx(unsigned char * lx, unsigned char * mave, unsigned char * dark, float
 
 void * getResultThread(void *args)
 {
-    const float ts = 80;
+    const float ts = 60;
     const float tss = 1 / ts;
     float scale;
     TaskParam *param = (TaskParam*)args;

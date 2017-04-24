@@ -35,6 +35,17 @@ void init()
 
 }
 
+
+static void getSumAccumulator(long *sum, uchar c)
+{
+    *sum += c;
+}
+
+static void getSumCombiner(long *sum, const long * c)
+{
+    *sum += c;
+}
+
 uchar RS_KERNEL getDarkChannel(uchar4 in)
 {
     return (in.r < in.g ) ? (in.r < in.b ? in.r : in.b) : (in.g < in.b ? in.g : in.b);
@@ -198,15 +209,6 @@ uint RS_KERNEL getDivMatrix(uint v, int x, int y)
     }
 }
 
-static void getSumAccumulator(long *sum, uchar c)
-{
-    *sum += c;
-}
-
-static void getSumCombiner(long *sum, const long * c)
-{
-    *sum += c;
-}
 
 static void copy(rs_allocation des, rs_allocation src, int width, int height)
 {
