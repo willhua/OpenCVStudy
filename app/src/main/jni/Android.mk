@@ -19,6 +19,7 @@ LOCAL_MODULE := OpenCV
 
 LOCAL_SRC_FILES := JniEnvInit.cpp JniUtils.cpp OpenCVMethod.cpp  JniTest.cpp  LyhDehazor.cpp Dehazor.cpp FastDehazor.cpp FastDehazorCV.cpp
 
+LOCAL_CPP_FEATURES += exceptions
 LOCAL_LDLIBS +=  -lm -llog -ljnigraphics
 
 include $(BUILD_SHARED_LIBRARY)

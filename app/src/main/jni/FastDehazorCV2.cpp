@@ -9,14 +9,13 @@ using namespace cv;
 
 int FastDehazorCV::mThreshold = 60;
 
-FastDehazorCV::FastDehazorCV(int width, int height)
+FastDehazorCV::FastDehazorCV()
 {
-    mP = 1.2f;
+    mP = 1.3f;
     mThreshold = 60;
     mRadius = 50;
+    mSkyThreshold = 15;
     mResultTable = (unsigned char *)malloc(sizeof(unsigned char) * 256 * 256);
-    mDarkChannel = (unsigned char*)malloc(sizeof(unsigned char) * width * height);
-    mLx = (unsigned char *)malloc(sizeof(unsigned char) * width * height);
 }
 
 FastDehazorCV::~FastDehazorCV()
@@ -24,14 +23,6 @@ FastDehazorCV::~FastDehazorCV()
     if(mResultTable != NULL)
     {
         free(mResultTable);
-    }
-    if(mLx != NULL)
-    {
-        free(mLx);
-    }
-    if(mDarkChannel != NULL)
-    {
-        free(mDarkChannel);
     }
 }
 
@@ -115,7 +106,7 @@ inline void findMaxMin(unsigned char a, unsigned char b, unsigned char c, unsign
 }
 
 
-void * getDarkThread(void * args)
+void * FastDehazorCV::getDarkThread(void * args)
 {
     long sum1 = 0;
     long sum2 = 0;
@@ -336,11 +327,14 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
     const int LEN = width * height;
     const int WIN_SIZE = 2 * mRadius + 1;
 
+
+
     LOG("dark start");
     //求暗通道， 步骤2
     unsigned char rowMax = 0;
-    unsigned char darkmean = getDarkChannel(rgba, mDarkChannel, width, height, rowMax);
-    Mat darkChanMat(height, width, CV_8UC1, mDarkChannel);
+    unsigned char * darkChannel = (unsigned char*)malloc(sizeof(unsigned char) * LEN);
+    unsigned char darkmean = getDarkChannel(rgba, darkChannel, width, height, rowMax);
+    Mat darkChanMat(height, width, CV_8UC1, darkChannel);
     LOG("dark end");
 
 
@@ -350,16 +344,17 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
 
     //暗通道均值滤波   步骤3
     LOG("mean start");
-    cv::Mat mave(height, width, CV_8UC1, mDarkChannel);
+    cv::Mat mave(height, width, CV_8UC1, darkChannel);
     cv::blur(darkChanMat, mave, cv::Size(WIN_SIZE, WIN_SIZE));
     LOG("mean end");
 
 
     //步骤5
-    LOG("mLx start");
+    LOG("lx start");
+    unsigned char * lx = (unsigned char *)malloc(sizeof(unsigned char) * LEN);
     unsigned char * ptrmave = (unsigned char *)mave.data;
-    getLx(mLx, ptrmave, mDarkChannel,pmav, LEN);
-    LOG("mLx end");
+    getLx(lx, ptrmave, darkChannel,pmav, LEN);
+    LOG("lx end");
 
 
     //求A   步骤6
@@ -382,9 +377,11 @@ int FastDehazorCV::process(unsigned char * rgba, int width, int height, int boxR
 
     //计算输出
     LOG("result start");
-    getResult(rgba, mLx, mResultTable, LEN);
+    getResult(rgba, lx, mResultTable, LEN);
     LOG("result end");
 
+    free(lx);
+    free(darkChannel);
     LOG("return end");
 
     return 0;

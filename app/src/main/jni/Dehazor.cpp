@@ -49,7 +49,7 @@ JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_OpenCVMethod_fastDehazorCV(J
 
 JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_OpenCVMethod_initNative(JNIEnv *env, jclass cls) {
     LOG("fast  dehazor  init");
-    Dehazor::fastDehazorCV = new FastDehazorCV();
+    Dehazor::fastDehazorCV = new FastDehazorCV(1920, 1080);
 }
 
 JNIEXPORT void JNICALL Java_com_willhua_opencvstudy_OpenCVMethod_freeNative(JNIEnv *env, jclass cls) {
